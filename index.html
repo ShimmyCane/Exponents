@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Exponent Visualizer</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ═══════════════════════════════════════════════════════════════
+//  § 1  CONFIG
+// ═══════════════════════════════════════════════════════════════
+const CFG = {
+  BASE_MIN:  2,
+  BASE_MAX:  10,
+  BASE_INIT: 2,
+  EXP_INIT:  3,
+  EXP_MAX: [0, 0, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+
+  // Full single-step durations (ms)
+  T_UP_ZOOM:   600,
+  T_UP_STRIP:  750,
+  T_UP_EXPAND: 700,
+  T_UP_SETTLE: 650,
+  T_DN_COLOR:  700,
+  T_DN_FOCUS:  800,
+  T_DN_DROP:   300,   // pause after zoom-in before settling
+  T_DN_SETTLE: 650,
+
+  // Intermediate fast-step total duration (ms)
+  // Each intermediate plays a real abbreviated animation at this speed.
+  T_FAST: 260,
+
+  PANEL_FRAC:     0.62,
+  CELL_MAX:       54,
+  CELL_MIN:       2,
+  RECT_THRESHOLD: 64,
+
+  PANEL_DEFAULT: 460,
+  NAV_SIZE:       52,
+
+  BASE_HUES: [0, 0, 213, 159, 265, 25, 340, 50, 185, 300],
+};
+
+const FONT = "'DM Mono', monospace";
+const DISP = "'DM Serif Display', serif";
+
+// ═══════════════════════════════════════════════════════════════
+//  § 2  THEME
+// ═══════════════════════════════════════════════════════════════
+function makeTheme(base) {
+  const hue    = CFG.BASE_HUES[base] ?? (base * 37) % 360;
+  const accent  = `hsl(${hue},75%,62%)`;
+  const bg      = `hsl(${hue},40%,5%)`;
+  const cell    = `hsl(${hue},65%,48%)`;
+  const outline = `hsl(${hue},80%,72%)`;
+  const n = Math.max(base, 4);
+  const strip = Array.from({ length: n }, (_, i) => {
+    const l = Math.max(12, 72 - i * (52 / Math.max(n - 1, 3)));
+    return `hsl(${hue},70%,${l}%)`;
+  });
+  return { accent, bg, cell, outline, strip };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 3  GEOMETRY
+// ═══════════════════════════════════════════════════════════════
+function getDim(base, exp) {
+  if (exp === 0) return { w: 1, h: 1 };
+  const big = Math.pow(base, Math.ceil(exp / 2));
+  const sml = Math.pow(base, Math.floor(exp / 2));
+  return exp % 2 === 1 ? { w: big, h: sml } : { w: big, h: big };
+}
+function growAxis(exp) { return exp % 2 === 1 ? "w" : "h"; }
+function fitCell(dim, panelPx, gap) {
+  const f = CFG.PANEL_FRAC;
+  const fw = Math.floor((panelPx * f - (dim.w - 1) * gap) / dim.w);
+  const fh = Math.floor((panelPx * f - (dim.h - 1) * gap) / dim.h);
+  return Math.max(CFG.CELL_MIN, Math.min(CFG.CELL_MAX, Math.min(fw, fh)));
+}
+function gridPx(dim, cs, gap) {
+  return { w: dim.w * cs + (dim.w - 1) * gap, h: dim.h * cs + (dim.h - 1) * gap };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 4  PHASES
+// ═══════════════════════════════════════════════════════════════
+const P = {
+  IDLE:      "idle",
+  UP_ZOOM:   "up_zoom",   // grid zooms out; new cells invisible
+  UP_STRIP:  "up_strip",  // new cells appear; strip colors shown
+  UP_EXPAND: "up_expand", // outline grows to full size
+  UP_SETTLE: "up_settle", // all cells flatten to theme.cell
+  DN_COLOR:  "dn_color",  // grid colored by strip (nothing moves)
+  DN_FOCUS:  "dn_focus",  // non-survivors fade; outline shrinks
+  DN_DROP:   "dn_drop",   // dispExp+bigExp flip → zoom to center
+  DN_SETTLE: "dn_settle", // cells flatten to theme.cell at correct size
+};
+const UP_PHASES = [P.UP_ZOOM, P.UP_STRIP, P.UP_EXPAND, P.UP_SETTLE];
+const DN_PHASES = [P.DN_COLOR, P.DN_FOCUS, P.DN_DROP, P.DN_SETTLE];
+
+// ═══════════════════════════════════════════════════════════════
+//  § 5  SEQUENCER
+//
+//  Invariants:
+//    • bigExp/smallExp/dispExp change ONLY at the start of an animation
+//      step (runStepFast or runStep).  They never change mid-phase.
+//    • For DOWN, at DN_DROP we set bigExp=to so the grid zooms to
+//      the correctly-sized, centered state before settling.
+//    • liveRef is a ref copy of liveExp so changeExp always reads
+//      the true current visual position without stale-closure issues.
+//    • fast=true during intermediate steps → fold animations skipped.
+// ═══════════════════════════════════════════════════════════════
+function useSequencer(init) {
+  const [phase,    setPhase]    = useState(P.IDLE);
+  const [dispExp,  setDispExp]  = useState(init);
+  const [bigExp,   setBigExp]   = useState(init);
+  const [smallExp, setSmallExp] = useState(init);
+  const [liveExp,  setLiveExp]  = useState(init);
+  const [fast,     setFast]     = useState(false);
+
+  const liveRef = useRef(init);
+
+  const ts = useRef([]);
+  const clr = () => { ts.current.forEach(clearTimeout); ts.current = []; };
+  const aft = (fn, ms) => { const t = setTimeout(fn, ms); ts.current.push(t); };
+
+  const reset = useCallback((n) => {
+    clr();
+    liveRef.current = n;
+    setPhase(P.IDLE); setFast(false);
+    setDispExp(n); setBigExp(n); setSmallExp(n); setLiveExp(n);
+  }, []);
+
+  // ── Abbreviated step for intermediates (T_FAST ms total) ─────
+  // Does NOT call setPhase(IDLE) — the next aft in the chain
+  // immediately overrides the phase, giving a seamless handoff.
+  const runStepFast = useCallback((from, to, offset) => {
+    const F  = CFG.T_FAST;
+    if (to > from) {
+      // UP fast:  zoom → strip → settle  (skip expand)
+      const t1 = Math.round(F * 0.23);  // UP_ZOOM
+      const t2 = Math.round(F * 0.38);  // UP_STRIP
+      // UP_SETTLE fills the rest; next step overrides it
+      aft(() => {
+        setBigExp(to); setSmallExp(from); setDispExp(to);
+        liveRef.current = to; setLiveExp(to); setFast(true);
+        setPhase(P.UP_ZOOM);
+      }, offset);
+      aft(() => setPhase(P.UP_STRIP),  offset + t1);
+      aft(() => setPhase(P.UP_SETTLE), offset + t1 + t2);
+    } else {
+      // DN fast:  color → focus → drop+zoom → settle
+      // At DN_DROP we set bigExp=to so the grid immediately zooms
+      // to the correctly-sized, centered view.
+      const t1 = Math.round(F * 0.23);  // DN_COLOR
+      const t2 = Math.round(F * 0.38);  // DN_FOCUS
+      const t3 = Math.round(F * 0.10);  // DN_DROP hold
+      // DN_SETTLE fills the rest
+      aft(() => {
+        setBigExp(from); setSmallExp(to); setDispExp(from);
+        liveRef.current = to; setLiveExp(to); setFast(true);
+        setPhase(P.DN_COLOR);
+      }, offset);
+      aft(() => setPhase(P.DN_FOCUS), offset + t1);
+      aft(() => {
+        // Zoom to center: flip dispExp AND bigExp together
+        setDispExp(to); setBigExp(to); setSmallExp(to);
+        setPhase(P.DN_DROP);
+      }, offset + t1 + t2);
+      aft(() => setPhase(P.DN_SETTLE), offset + t1 + t2 + t3);
+    }
+    return offset + F;
+  }, []);
+
+  // ── Full animation for the final step ────────────────────────
+  const runStep = useCallback((from, to, offset) => {
+    const C = CFG;
+    if (to > from) {
+      // UP full:  zoom → strip → expand → settle → IDLE
+      aft(() => {
+        setBigExp(to); setSmallExp(from); setDispExp(to);
+        liveRef.current = to; setLiveExp(to); setFast(false);
+        setPhase(P.UP_ZOOM);
+      }, offset);
+      let d = offset + C.T_UP_ZOOM;
+      aft(() => setPhase(P.UP_STRIP),  d); d += C.T_UP_STRIP;
+      aft(() => setPhase(P.UP_EXPAND), d); d += C.T_UP_EXPAND;
+      aft(() => setPhase(P.UP_SETTLE), d); d += C.T_UP_SETTLE;
+      aft(() => { setSmallExp(to); setPhase(P.IDLE); }, d);
+    } else {
+      // DN full:  color → focus → drop+zoom → settle → IDLE
+      // Same zoom-to-center as fast: at DN_DROP set bigExp=to.
+      aft(() => {
+        setBigExp(from); setSmallExp(to); setDispExp(from);
+        liveRef.current = to; setLiveExp(to); setFast(false);
+        setPhase(P.DN_COLOR);
+      }, offset);
+      let d = offset + C.T_DN_COLOR;
+      aft(() => setPhase(P.DN_FOCUS), d); d += C.T_DN_FOCUS;
+      aft(() => {
+        setDispExp(to); setBigExp(to); setSmallExp(to);
+        setPhase(P.DN_DROP);
+      }, d); d += C.T_DN_DROP;
+      aft(() => setPhase(P.DN_SETTLE), d); d += C.T_DN_SETTLE;
+      aft(() => setPhase(P.IDLE), d);
+    }
+  }, []);
+
+  // ── Dispatcher: fast chain → full final ──────────────────────
+  const go = useCallback((from, to) => {
+    clr();
+    if (from === to) return;
+    const dir   = to > from ? 1 : -1;
+    const steps = Math.abs(to - from);
+    let offset  = 0;
+    for (let i = 0; i < steps - 1; i++) {
+      offset = runStepFast(from + dir * i, from + dir * (i + 1), offset);
+    }
+    runStep(to - dir, to, offset);
+  }, [runStepFast, runStep]);
+
+  return { phase, dispExp, bigExp, smallExp, liveExp, liveRef, fast, go, reset };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 6  BACKGROUND DOT GRID (zooms with exp)
+// ═══════════════════════════════════════════════════════════════
+function BgZoom({ base, liveExp, theme }) {
+  const sp = Math.max(8, Math.round(46 / Math.pow(base, liveExp * 0.17)));
+  return (
+    <div style={{
+      position: "absolute", inset: 0, borderRadius: 18, pointerEvents: "none",
+      backgroundImage: `radial-gradient(circle at 1px 1px, ${theme.accent}12 1px, transparent 0)`,
+      backgroundSize: `${sp}px ${sp}px`,
+      transition: "background-size 0.5s ease",
+    }} />
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 7  CELL GRID  (≤ RECT_THRESHOLD cells)
+//
+//  cs and padL/padT are ALWAYS derived from bigExp so cells never
+//  move during a transition — only color and opacity change.
+//  After DN_DROP, bigExp == to so the grid re-centers at full size.
+// ═══════════════════════════════════════════════════════════════
+function ExponentGrid({ base, dispExp, bigExp, smallExp, phase, fast, theme, panelPx }) {
+  const bigDim  = getDim(base, bigExp);
+  const smlDim  = getDim(base, smallExp);
+  const dispDim = getDim(base, dispExp);
+
+  const gap = bigDim.w * bigDim.h > 36 ? 1 : 2;
+  const cs  = fitCell(bigDim, panelPx, gap);
+  const br  = cs <= 5 ? 0 : cs <= 12 ? 1 : 2;
+
+  const bigGp  = gridPx(bigDim, cs, gap);
+  const smlGp  = gridPx(smlDim, cs, gap);
+  const dispGp = gridPx(dispDim, cs, gap);
+
+  const padL = Math.round((panelPx - bigGp.w) / 2);
+  const padT = Math.round((panelPx - bigGp.h) / 2);
+
+  const isDown = DN_PHASES.includes(phase);
+  const isUp   = UP_PHASES.includes(phase);
+  const axis   = growAxis(bigExp);
+
+  function getStrip(col, row) {
+    return axis === "w" ? Math.floor(col / smlDim.w) : Math.floor(row / smlDim.h);
+  }
+  function isSurvivor(col, row) {
+    return axis === "w" ? col < smlDim.w : row < smlDim.h;
+  }
+  function isNewCell(col, row) {
+    return axis === "w" ? col >= smlDim.w : row >= smlDim.h;
+  }
+
+  // Outline rectangle — width/height CSS-transitioned
+  let outW = bigGp.w, outH = bigGp.h;
+  if (isUp) {
+    const grown = [P.UP_EXPAND, P.UP_SETTLE].includes(phase);
+    outW = grown ? bigGp.w : smlGp.w;
+    outH = grown ? bigGp.h : smlGp.h;
+  } else if (isDown) {
+    // After DN_DROP bigExp==to so smlGp==bigGp; outline is at full target size.
+    const shrunk = [P.DN_FOCUS, P.DN_DROP, P.DN_SETTLE].includes(phase);
+    outW = shrunk ? smlGp.w : bigGp.w;
+    outH = shrunk ? smlGp.h : bigGp.h;
+  }
+
+  const totalBig  = Math.pow(base, bigExp);
+  const totalSml  = Math.pow(base, smallExp);
+  const totalDisp = Math.pow(base, dispExp);
+  const showMath  = [P.UP_STRIP, P.UP_EXPAND, P.DN_COLOR, P.DN_FOCUS].includes(phase);
+  const merging   = phase === P.UP_EXPAND;
+  const splitting = phase === P.DN_FOCUS;
+
+  const mathStr = isDown
+    ? (splitting ? `${totalBig.toLocaleString()} ÷ ${base} = ${totalSml.toLocaleString()}`
+        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "))
+    : (merging ? `${base} × ${totalSml.toLocaleString()} = ${totalBig.toLocaleString()}`
+        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "));
+
+  const cells = Array.from({ length: dispDim.w * dispDim.h }, (_, i) => {
+    const col   = i % dispDim.w;
+    const row   = Math.floor(i / dispDim.w);
+    const sc    = theme.strip[Math.min(getStrip(col, row), theme.strip.length - 1)];
+    const surv  = isSurvivor(col, row);
+    const isNew = isNewCell(col, row);
+    let bg = theme.cell, op = 1, anim, delay;
+
+    if (isUp) {
+      if (phase === P.UP_ZOOM) {
+        // Survivor cells visible at new (smaller) size; new cells hidden
+        op = isNew ? 0 : 1;
+      }
+      if (phase === P.UP_STRIP) {
+        bg = sc;
+        if (isNew) {
+          if (!fast) {
+            // Full step: fold animation
+            anim  = axis === "w" ? "foldInX" : "foldInY";
+            const pos = axis === "w"
+              ? (col - smlDim.w) + row * (bigDim.w - smlDim.w)
+              : (row - smlDim.h) + col * (bigDim.h - smlDim.h);
+            delay = `${Math.min(Math.abs(pos) * 15, 160)}ms`;
+          }
+          // fast step: new cells fade in via opacity transition (op=1 default)
+        }
+      }
+      if (phase === P.UP_EXPAND) { bg = sc; }
+      // UP_SETTLE: bg = theme.cell (default)
+    } else if (isDown) {
+      // dispExp === bigExp before DN_DROP (full grid shown)
+      if (dispExp === bigExp) {
+        if (phase === P.DN_COLOR) { bg = sc; }
+        if (phase === P.DN_FOCUS) { bg = sc; op = surv ? 1 : 0; }
+      }
+      // After DN_DROP bigExp=to=smallExp=dispExp — dispDim is the small grid.
+      // All cells here ARE the survivors so they're always op=1.
+      if (phase === P.DN_DROP)   { bg = sc; }
+      // DN_SETTLE: bg = theme.cell (default)
+    }
+    return { bg, op, anim, delay };
+  });
+
+  return (
+    <div style={{ position: "absolute", inset: 0 }}>
+
+      {/* Outline */}
+      <div style={{
+        position: "absolute", left: padL, top: padT,
+        width: outW, height: outH,
+        border: `3px solid ${theme.outline}`, borderRadius: br + 3,
+        boxShadow: `0 0 18px ${theme.accent}55, 0 0 36px ${theme.accent}22`,
+        pointerEvents: "none", zIndex: 10,
+        transition: "width 0.65s cubic-bezier(0.4,0,0.2,1), height 0.65s cubic-bezier(0.4,0,0.2,1)",
+      }} />
+
+      {/* Cells */}
+      <div style={{
+        position: "absolute", left: padL, top: padT,
+        display: "grid",
+        gridTemplateColumns: `repeat(${dispDim.w}, ${cs}px)`,
+        gridTemplateRows:    `repeat(${dispDim.h}, ${cs}px)`,
+        gap: `${gap}px`,
+      }}>
+        {cells.map(({ bg, op, anim, delay }, i) => (
+          <div key={i} style={{
+            width: cs, height: cs, borderRadius: br,
+            background: bg, opacity: op,
+            transition: "background 0.5s ease, opacity 0.5s ease",
+            animation: anim ? `${anim} 0.65s cubic-bezier(0.34,1.4,0.64,1) both` : undefined,
+            animationDelay: delay,
+          }} />
+        ))}
+      </div>
+
+      {/* Strip count labels */}
+      {showMath && Array.from({ length: base }, (_, s) => {
+        const color = theme.strip[Math.min(s, theme.strip.length - 1)];
+        const fade  = (isDown && phase === P.DN_FOCUS && s > 0)
+                   || (isUp   && phase === P.UP_ZOOM  && s > 0);
+        let lx, ly;
+        if (axis === "w") {
+          const sw = smlDim.w * (cs + gap);
+          lx = padL + s * sw + sw / 2; ly = padT - 22;
+        } else {
+          const sh = smlDim.h * (cs + gap);
+          lx = padL + bigGp.w + 12; ly = padT + s * sh + sh / 2;
+        }
+        return (
+          <div key={`lbl-${s}`} style={{
+            position: "absolute", left: lx, top: ly,
+            transform: "translate(-50%,-50%)",
+            fontFamily: FONT, fontSize: Math.max(9, Math.min(14, cs * 0.8)),
+            fontWeight: 700, color, opacity: fade ? 0 : 1,
+            transition: "opacity 0.4s ease", pointerEvents: "none",
+            whiteSpace: "nowrap", textShadow: `0 0 8px ${color}bb`,
+          }}>{totalSml.toLocaleString()}</div>
+        );
+      })}
+
+      {/* Math annotation */}
+      <div style={{
+        position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
+        fontFamily: FONT, fontSize: Math.max(9, Math.min(14, cs * 0.75)),
+        color: (merging || splitting) ? theme.outline : `${theme.accent}77`,
+        fontWeight: (merging || splitting) ? 700 : 400, letterSpacing: "0.03em",
+        opacity: showMath ? 1 : 0, transition: "opacity 0.4s, color 0.3s",
+        pointerEvents: "none", whiteSpace: "nowrap",
+        textShadow: (merging || splitting) ? `0 0 10px ${theme.accent}` : "none",
+      }}>{mathStr}</div>
+
+      {/* Idle total */}
+      <div style={{
+        position: "absolute", bottom: "7%", right: "8%",
+        fontFamily: FONT, fontSize: Math.max(10, Math.min(18, cs * 0.9)),
+        color: theme.outline, fontWeight: 700, letterSpacing: "-0.02em",
+        textShadow: `0 0 10px ${theme.accent}`, pointerEvents: "none",
+        opacity: phase === P.IDLE ? 1 : 0, transition: "opacity 0.4s 0.3s",
+      }}>{totalDisp.toLocaleString()}</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 8  BAND RENDERER  (> RECT_THRESHOLD cells)
+//  Same invariants as ExponentGrid.
+// ═══════════════════════════════════════════════════════════════
+function RectGrid({ base, dispExp, bigExp, smallExp, phase, fast, theme, panelPx }) {
+  const bigDim = getDim(base, bigExp);
+  const smlDim = getDim(base, smallExp);
+  const gap    = 2;
+  const cs     = fitCell(bigDim, panelPx, gap);
+  const bigGp  = gridPx(bigDim, cs, gap);
+  const smlGp  = gridPx(smlDim, cs, gap);
+  const dispGp = gridPx(getDim(base, dispExp), cs, gap);
+
+  const padL = Math.round((panelPx - bigGp.w) / 2);
+  const padT = Math.round((panelPx - bigGp.h) / 2);
+
+  const isDown = DN_PHASES.includes(phase);
+  const isUp   = UP_PHASES.includes(phase);
+  const axis   = growAxis(bigExp);
+
+  let outW = bigGp.w, outH = bigGp.h;
+  if (isUp) {
+    const grown  = [P.UP_EXPAND, P.UP_SETTLE].includes(phase);
+    outW = grown ? bigGp.w : smlGp.w; outH = grown ? bigGp.h : smlGp.h;
+  } else if (isDown) {
+    const shrunk = [P.DN_FOCUS, P.DN_DROP, P.DN_SETTLE].includes(phase);
+    outW = shrunk ? smlGp.w : bigGp.w; outH = shrunk ? smlGp.h : bigGp.h;
+  }
+
+  const totalBig  = Math.pow(base, bigExp);
+  const totalSml  = Math.pow(base, smallExp);
+  const totalDisp = Math.pow(base, dispExp);
+  const showMath  = [P.UP_STRIP, P.UP_EXPAND, P.DN_COLOR, P.DN_FOCUS].includes(phase);
+  const merging   = phase === P.UP_EXPAND;
+  const splitting = phase === P.DN_FOCUS;
+  const frac      = 1 / base;
+
+  const mathStr = isDown
+    ? (splitting ? `${totalBig.toLocaleString()} ÷ ${base} = ${totalSml.toLocaleString()}`
+        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "))
+    : (merging ? `${base} × ${totalSml.toLocaleString()} = ${totalBig.toLocaleString()}`
+        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "));
+
+  return (
+    <div style={{ position: "absolute", inset: 0 }}>
+
+      {/* Outline */}
+      <div style={{
+        position: "absolute", left: padL, top: padT,
+        width: outW, height: outH,
+        border: `3px solid ${theme.outline}`, borderRadius: 4,
+        boxShadow: `0 0 18px ${theme.accent}55, 0 0 36px ${theme.accent}22`,
+        pointerEvents: "none", zIndex: 10,
+        transition: "width 0.65s cubic-bezier(0.4,0,0.2,1), height 0.65s cubic-bezier(0.4,0,0.2,1)",
+      }} />
+
+      {/* Bands */}
+      <div style={{
+        position: "absolute", left: padL, top: padT, width: dispGp.w, height: dispGp.h,
+        transformOrigin: "center center",
+        "--ssx": (smlGp.w / bigGp.w).toFixed(4),
+        "--ssy": (smlGp.h / bigGp.h).toFixed(4),
+        animation: (isUp && phase === P.UP_ZOOM && !fast)
+          ? `zoomOutBands ${CFG.T_UP_ZOOM}ms ease-out both`
+          : undefined,
+      }}>
+        {Array.from({ length: base }, (_, s) => {
+          const color  = theme.strip[Math.min(s, theme.strip.length - 1)];
+          const isSurv = s === 0;
+          let bx = 0, by = 0, bw = dispGp.w, bh = dispGp.h;
+          if (axis === "w") { bw = Math.round(dispGp.w * frac); bx = s * bw; }
+          else              { bh = Math.round(dispGp.h * frac); by = s * bh; }
+
+          let bg = theme.cell, op = 1;
+          if (isUp) {
+            const isNew = s > 0;
+            if (phase === P.UP_ZOOM)   { op = isNew ? 0 : 1; }
+            if (phase === P.UP_STRIP)  { bg = color; }
+            if (phase === P.UP_EXPAND) { bg = color; }
+          } else if (isDown) {
+            if (phase === P.DN_COLOR && dispExp === bigExp) { bg = color; }
+            if (phase === P.DN_FOCUS && dispExp === bigExp) { bg = color; op = isSurv ? 1 : 0; }
+            if (phase === P.DN_DROP)   { bg = color; op = isSurv ? 1 : 0; }
+            if (phase === P.DN_SETTLE) { op = isSurv ? 1 : 0; }
+          }
+
+          const doFold = isUp && s > 0 && phase === P.UP_STRIP && !fast;
+          return (
+            <div key={s} style={{
+              position: "absolute", left: bx, top: by, width: bw, height: bh,
+              background: bg, opacity: op,
+              transition: "opacity 0.5s ease, background 0.5s ease",
+              animation: doFold
+                ? (axis === "w" ? "foldInX 0.7s cubic-bezier(0.34,1.3,0.64,1) both"
+                                : "foldInY 0.7s cubic-bezier(0.34,1.3,0.64,1) both")
+                : undefined,
+              animationDelay: doFold ? `${(s - 1) * 100}ms` : undefined,
+              borderLeft: s > 0 && axis === "w" ? `1px solid ${theme.bg}55` : undefined,
+              borderTop:  s > 0 && axis === "h" ? `1px solid ${theme.bg}55` : undefined,
+            }} />
+          );
+        })}
+
+        {/* Strip labels */}
+        {showMath && Array.from({ length: base }, (_, s) => {
+          const color = theme.strip[Math.min(s, theme.strip.length - 1)];
+          const fade  = isDown && phase === P.DN_FOCUS && s > 0;
+          let lx, ly;
+          if (axis === "w") {
+            lx = s * Math.round(dispGp.w * frac) + Math.round(dispGp.w * frac) / 2;
+            ly = -20;
+          } else {
+            lx = dispGp.w + 12;
+            ly = s * Math.round(dispGp.h * frac) + Math.round(dispGp.h * frac) / 2;
+          }
+          return (
+            <div key={`lbl-${s}`} style={{
+              position: "absolute", left: lx, top: ly,
+              transform: "translate(-50%,-50%)",
+              fontFamily: FONT, fontSize: Math.max(9, Math.min(14, cs * 0.7)),
+              fontWeight: 700, color, opacity: fade ? 0 : 1,
+              transition: "opacity 0.4s ease", pointerEvents: "none",
+              whiteSpace: "nowrap", textShadow: `0 0 8px ${color}bb`,
+            }}>{totalSml.toLocaleString()}</div>
+          );
+        })}
+      </div>
+
+      {/* Math annotation */}
+      <div style={{
+        position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
+        fontFamily: FONT, fontSize: Math.max(9, Math.min(13, panelPx * 0.026)),
+        color: (merging || splitting) ? theme.outline : `${theme.accent}77`,
+        fontWeight: (merging || splitting) ? 700 : 400, letterSpacing: "0.03em",
+        opacity: showMath ? 1 : 0, transition: "opacity 0.4s, color 0.3s",
+        pointerEvents: "none", whiteSpace: "nowrap",
+        textShadow: (merging || splitting) ? `0 0 10px ${theme.accent}` : "none",
+      }}>{mathStr}</div>
+
+      {/* Idle total */}
+      <div style={{
+        position: "absolute", bottom: "7%", right: "8%",
+        fontFamily: FONT, fontSize: 13, color: theme.outline, fontWeight: 700,
+        letterSpacing: "-0.02em", textShadow: `0 0 10px ${theme.accent}`,
+        pointerEvents: "none",
+        opacity: phase === P.IDLE ? 1 : 0, transition: "opacity 0.4s 0.3s",
+      }}>{totalDisp.toLocaleString()}</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 9  GRID DISPATCHER
+// ═══════════════════════════════════════════════════════════════
+function Grid(props) {
+  return Math.pow(props.base, props.bigExp) > CFG.RECT_THRESHOLD
+    ? <RectGrid {...props} />
+    : <ExponentGrid {...props} />;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 10  MATH ROW
+// ═══════════════════════════════════════════════════════════════
+function MathRow({ base, liveExp, bigExp, smallExp, phase, theme }) {
+  const now      = Math.pow(base, liveExp);
+  const totalBig = Math.pow(base, bigExp);
+  const totalSml = Math.pow(base, smallExp);
+  const isDown   = DN_PHASES.includes(phase);
+  const showSub  = [P.UP_STRIP, P.UP_EXPAND, P.DN_COLOR, P.DN_FOCUS].includes(phase);
+  const merge    = phase === P.UP_EXPAND;
+  const split    = phase === P.DN_FOCUS;
+
+  const sub = isDown
+    ? (split ? `${totalBig.toLocaleString()} ÷ ${base} = ${totalSml.toLocaleString()}`
+        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "))
+    : (merge ? `${base} × ${totalSml.toLocaleString()} = ${totalBig.toLocaleString()}`
+        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "));
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div style={{
+        fontSize: "clamp(22px,4.2vw,38px)", fontFamily: DISP,
+        color: "#f8fafc", textShadow: `0 0 22px ${theme.accent}55`,
+        userSelect: "none", lineHeight: 1.1,
+      }}>
+        <span style={{ color: theme.accent }}>{base}</span>
+        <sup style={{ fontSize: "0.52em", verticalAlign: "super", color: theme.outline }}>{liveExp}</sup>
+        <span style={{ color: "#1e2d3d", fontSize: "0.5em", margin: "0 7px" }}>=</span>
+        <span style={{ color: "#f1f5f9", fontSize: "0.56em" }}>{now.toLocaleString()}</span>
+      </div>
+      {/* Fixed-height sub-line — never causes layout shift */}
+      <div style={{
+        fontFamily: FONT, fontSize: 12, letterSpacing: "0.04em",
+        color: (merge || split) ? theme.outline : `${theme.accent}77`,
+        fontWeight: (merge || split) ? 600 : 400,
+        height: 20, marginTop: 4,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        opacity: showSub ? 1 : 0, transition: "opacity 0.35s, color 0.3s",
+      }}>{sub}</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 11  NAV BUTTON
+// ═══════════════════════════════════════════════════════════════
+function NavBtn({ label, onClick, disabled, theme }) {
+  const sz = CFG.NAV_SIZE;
+  return (
+    <button onClick={onClick} disabled={disabled} className="nav-btn" style={{
+      width: sz, height: sz, borderRadius: "50%", flexShrink: 0,
+      background: disabled ? "#0d1625" : theme.cell,
+      border: `2px solid ${disabled ? "#1e2a3a" : theme.outline}`,
+      color: disabled ? "#1e2a3a" : "#fff", fontSize: 24,
+      cursor: disabled ? "not-allowed" : "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      opacity: disabled ? 0.2 : 1,
+      boxShadow: disabled ? "none" : `0 0 16px ${theme.accent}44`,
+      transition: "all 0.15s",
+    }}>{label}</button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 12  APP
+// ═══════════════════════════════════════════════════════════════
+const supCh = n => "⁰¹²³⁴⁵⁶⁷⁸⁹"[n] ?? String(n);
+const TT = {
+  exponent: { title: "Exponent",      body: "The exponent tells you how many times to multiply the base. Each step multiplies the total by the base." },
+  base:     { title: "Base",          body: "The base is the number being multiplied. A larger base grows wider strips each fold." },
+  fold:     { title: "Folding paper", body: "Each multiplication folds the rectangle — alternating width then height. A4→A3→A2→A1 follows base 2." },
+  total:    { title: "Total cells",   body: "The total equals bⁿ. Each step multiplies — this explosive growth is the essence of exponential functions." },
+  divide:   { title: "Dividing down", body: "Going down divides by the base. The top-left strip survives; the rest fade and the view zooms back to center." },
+};
+
+function App() {
+  const [base, setBase]       = useState(CFG.BASE_INIT);
+  const [exp,  setExp]        = useState(CFG.EXP_INIT);
+  const [tip,  setTip]        = useState(null);
+  const [panelPx, setPanelPx] = useState(CFG.PANEL_DEFAULT);
+  const panelRef = useRef(null);
+
+  const { phase, dispExp, bigExp, smallExp, liveExp, liveRef, fast, go, reset } =
+    useSequencer(CFG.EXP_INIT);
+
+  const theme  = makeTheme(base);
+  const maxExp = CFG.EXP_MAX[base] ?? 4;
+  const isDN   = DN_PHASES.includes(phase);
+  const currDim = getDim(base, liveExp);
+  const opLabel = phase !== P.IDLE ? (isDN ? `÷${base}` : `×${base}`) : "";
+
+  useEffect(() => {
+    const obs = new ResizeObserver(entries => {
+      const r = entries[0].contentRect;
+      setPanelPx(Math.min(r.width, r.height));
+    });
+    if (panelRef.current) obs.observe(panelRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  function changeExp(n) {
+    if (n < 0 || n > maxExp) return;
+    setExp(n);
+    go(liveRef.current, n);
+  }
+  function changeBase(b) {
+    const mx     = CFG.EXP_MAX[b] ?? 4;
+    const newExp = Math.min(exp, mx);
+    setBase(b); setExp(newExp); reset(newExp);
+  }
+
+  const activeTip = isDN ? "divide" : tip;
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: "#0a1020",
+      color: "#e2e8f0", fontFamily: FONT,
+      display: "flex", flexDirection: "column", alignItems: "center",
+      padding: "20px 16px 32px",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display&display=swap');
+        @keyframes foldInX {
+          from { opacity:0; transform:perspective(500px) rotateY(-85deg) scaleX(0.05); }
+          to   { opacity:1; transform:perspective(500px) rotateY(0deg)   scaleX(1);    }
+        }
+        @keyframes foldInY {
+          from { opacity:0; transform:perspective(500px) rotateX(-85deg) scaleY(0.05); }
+          to   { opacity:1; transform:perspective(500px) rotateX(0deg)   scaleY(1);    }
+        }
+        @keyframes zoomOutBands {
+          from { transform: scaleX(var(--ssx)) scaleY(var(--ssy)); }
+          to   { transform: scaleX(1) scaleY(1); }
+        }
+        .nav-btn:hover:not(:disabled) { filter:brightness(1.3); transform:scale(1.08); }
+        .nav-btn:active:not(:disabled){ transform:scale(0.92); }
+        .bt { cursor:pointer; border:none; transition:all .18s; }
+        .bt:hover { filter:brightness(1.2); }
+        .ed { cursor:pointer; border:none; transition:width .14s,height .14s,background .14s,border .14s; }
+        .ed:hover { filter:brightness(1.5); }
+        .ch { cursor:pointer; border:none; transition:all .14s; }
+        .ch:hover { filter:brightness(1.3); transform:translateY(-1px); }
+      `}</style>
+
+      {/* Header — fixed height */}
+      <div style={{
+        textAlign: "center", height: 52,
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        marginBottom: 10,
+      }}>
+        <div style={{
+          fontFamily: DISP, fontSize: "clamp(18px,3.6vw,28px)",
+          color: theme.outline, transition: "color 0.4s",
+          textShadow: `0 0 20px ${theme.accent}44`, letterSpacing: "0.01em",
+        }}>Exponential Powers</div>
+        <div style={{ fontSize: 9, color: "#1e2d3d", marginTop: 3, letterSpacing: "0.09em", textTransform: "uppercase" }}>
+          visualizing b<sup>n</sup> as a folding rectangle
+        </div>
+      </div>
+
+      {/* Base tabs — fixed height */}
+      <div style={{
+        height: 36, display: "flex", alignItems: "center", gap: 3,
+        background: "#131e2e", padding: "0 5px", borderRadius: 10,
+        marginBottom: 10,
+      }}>
+        {Array.from({ length: CFG.BASE_MAX - CFG.BASE_MIN + 1 }, (_, i) => i + CFG.BASE_MIN).map(b => {
+          const t = makeTheme(b);
+          return (
+            <button key={b} className="bt" onClick={() => changeBase(b)} style={{
+              fontFamily: FONT, fontSize: 11, fontWeight: 500,
+              padding: "4px 9px", borderRadius: 7, height: 28,
+              background: base === b ? t.cell : "transparent",
+              color: base === b ? "#fff" : "#374151",
+              boxShadow: base === b ? `0 0 11px ${t.accent}44` : "none",
+            }}>base {b}</button>
+          );
+        })}
+      </div>
+
+      {/* Exponent dots — FIXED height; dots resize inside it */}
+      <div style={{
+        height: 40, display: "flex", alignItems: "center", gap: 5,
+        background: "#131e2e", padding: "0 14px", borderRadius: 12,
+        boxShadow: `0 0 16px ${theme.accent}11`, marginBottom: 12,
+      }}>
+        {Array.from({ length: maxExp + 1 }, (_, i) => (
+          <button key={i} className="ed" onClick={() => changeExp(i)} style={{
+            width:  i === liveExp ? 22 : 10,
+            height: i === liveExp ? 22 : 10,
+            borderRadius: "50%",
+            background: i === liveExp ? theme.cell : i < liveExp ? `${theme.cell}44` : "#1a2535",
+            border: i === liveExp ? `2px solid ${theme.outline}` : "1px solid #1e2d3d",
+            boxShadow: i === liveExp ? `0 0 6px ${theme.accent}` : "none",
+            color: "#fff", fontFamily: FONT, fontSize: 8, fontWeight: 700,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", flexShrink: 0,
+          }}>{i === liveExp ? i : ""}</button>
+        ))}
+      </div>
+
+      {/* Grid panel + nav buttons */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <NavBtn label="−" onClick={() => changeExp(exp - 1)} disabled={exp === 0} theme={theme} />
+
+        <div ref={panelRef} style={{
+          width:  "min(460px, calc(100vw - 160px))",
+          height: "min(460px, calc(100vw - 160px))",
+          background: theme.bg,
+          border: `1.5px solid ${theme.accent}1a`,
+          borderRadius: 18, position: "relative", overflow: "hidden", flexShrink: 0,
+          boxShadow: `0 0 32px ${theme.accent}11, inset 0 0 24px #00000066`,
+          transition: "background 0.4s, border-color 0.4s",
+        }}
+          onMouseEnter={() => setTip("total")}
+          onMouseLeave={() => setTip(null)}
+        >
+          <BgZoom base={base} liveExp={liveExp} theme={theme} />
+
+          {/* Dim label */}
+          <div style={{
+            position: "absolute", top: 10, left: 12,
+            fontFamily: FONT, fontSize: 9, color: theme.accent,
+            opacity: 0.35, letterSpacing: "0.07em", pointerEvents: "none",
+          }}>{currDim.w} × {currDim.h}</div>
+
+          {/* Op label — always rendered, opacity-toggled */}
+          <div style={{
+            position: "absolute", top: 10, right: 12,
+            fontFamily: FONT, fontSize: 9, color: theme.accent, pointerEvents: "none",
+            opacity: opLabel ? 0.45 : 0, transition: "opacity 0.2s",
+          }}>{opLabel || "·"}</div>
+
+          <Grid base={base} dispExp={dispExp} bigExp={bigExp} smallExp={smallExp}
+                phase={phase} fast={fast} theme={theme} panelPx={panelPx} />
+        </div>
+
+        <NavBtn label="+" onClick={() => changeExp(exp + 1)} disabled={exp === maxExp} theme={theme} />
+      </div>
+
+      {/* Math row — fixed height */}
+      <div style={{ height: 72, display: "flex", flexDirection: "column", justifyContent: "center" }}
+        onMouseEnter={() => setTip("base")} onMouseLeave={() => setTip(null)}
+      >
+        <MathRow base={base} liveExp={liveExp} bigExp={bigExp} smallExp={smallExp}
+                 phase={phase} theme={theme} />
+      </div>
+
+      {/* Fold hint — fixed height, opacity toggle */}
+      <div style={{
+        height: 20, display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 10, letterSpacing: "0.07em", marginBottom: 10,
+        opacity: liveExp > 0 && phase === P.IDLE ? 1 : 0,
+        transition: "opacity 0.3s",
+      }}
+        onMouseEnter={() => setTip("fold")} onMouseLeave={() => setTip(null)}
+      >
+        <span style={{ color: `${theme.accent}55` }}>
+          {liveExp % 2 === 1 ? "↔ width fold" : "↕ height fold"} · hover for info
+        </span>
+      </div>
+
+      {/* Tooltip — fixed height */}
+      <div style={{
+        width: "min(440px,90vw)", height: 64,
+        background: "#0e1828", borderRadius: 10, padding: "10px 16px",
+        border: `1px solid ${activeTip ? theme.accent + "33" : "transparent"}`,
+        opacity: activeTip ? 1 : 0.2,
+        transition: "opacity 0.3s, border-color 0.3s",
+        marginBottom: 14, boxSizing: "border-box",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+      }}>
+        {activeTip ? (
+          <>
+            <div style={{ fontFamily: DISP, fontSize: 12, color: theme.outline, marginBottom: 3 }}>{TT[activeTip].title}</div>
+            <div style={{ fontSize: 10, color: "#607080", lineHeight: 1.5 }}>{TT[activeTip].body}</div>
+          </>
+        ) : (
+          <div style={{ fontSize: 10, color: "#1a2535", textAlign: "center" }}>hover elements to learn more</div>
+        )}
+      </div>
+
+      {/* Power chips */}
+      <div style={{ width: "min(480px,92vw)", display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", marginBottom: 12 }}>
+        {Array.from({ length: maxExp + 1 }, (_, i) => {
+          const v = Math.pow(base, i);
+          return (
+            <button key={i} className="ch"
+              onClick={() => changeExp(i)}
+              onMouseEnter={() => setTip("exponent")}
+              onMouseLeave={() => setTip(null)}
+              style={{
+                fontFamily: FONT, fontSize: 10, padding: "3px 8px", borderRadius: 5,
+                background: i === liveExp ? `${theme.cell}99` : "#0e1828",
+                border: `1px solid ${i === liveExp ? theme.outline : "#1a2535"}`,
+                color: i === liveExp ? "#fff" : "#2d3d52",
+                boxShadow: i === liveExp ? `0 0 6px ${theme.accent}33` : "none",
+                cursor: "pointer", letterSpacing: "0.04em",
+              }}>
+              {base}{supCh(i)} = {v >= 100000 ? v.toExponential(1) : v.toLocaleString()}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ fontSize: 9, color: "#111d2a", letterSpacing: "0.08em" }}>
+        click a value · use ± · watch the fold
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  § 13  MOUNT
+// ═══════════════════════════════════════════════════════════════
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
