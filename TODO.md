@@ -9,7 +9,17 @@ New pages hang off the exponent page's **⚙ settings → Explore bigger** menu.
 
 ---
 
-## 1. Big-number line (`numberline.html`), next page to build
+## 1. Big-number line (`numberline.html`): built, ideas for next
+
+Built as a guided journey up the Googology Wiki's list (72 numbers, 7 chapters, from One to Hollom's
+number): a next-number link on every card, chapter jumps, a draggable line, autoplay and deep links
+(`numberline.html#googol`). The spec below is the original plan, kept for reference.
+
+- [ ] Add more entries per chapter (the wiki list is far longer; see its "More..." sections).
+- [ ] A real counting stretch at the start (count to 100, then by hundreds).
+- [ ] Show the numbers' relative size visually (digit counts, then tower heights).
+
+### Original plan
 
 **Inspiration:** a YouTube video about big numbers that starts at the googol and
 the googolplex and keeps going. _(add link here)_
