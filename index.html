@@ -1,17 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Exponent Visualizer</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; background: #0a1020; }
+    * { box-sizing: border-box; }
+    .bt { cursor: pointer; border: none; transition: all .18s; }
+    .bt:hover { filter: brightness(1.25); }
+    .nav-btn:hover:not(:disabled) { filter: brightness(1.3); transform: scale(1.08); }
+    .nav-btn:active:not(:disabled) { transform: scale(0.92); }
+    .tool { cursor: pointer; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 11px;
+            height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(10,16,32,.78); backdrop-filter: blur(4px); transition: filter .15s; }
+    .tool:hover { filter: brightness(1.35); }
+    .menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
+                 border-radius: 8px; text-decoration: none; font-family: 'DM Mono', monospace; font-size: 12px;
+                 background: transparent; border: none; cursor: pointer; text-align: left; }
+    .menu-item:hover:not(.off) { background: rgba(255,255,255,.05); }
+    .menu-item.off { cursor: default; opacity: .45; }
+    input[type=range].exp { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; outline: none; }
+    input[type=range].exp::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--thumb); border: 2px solid var(--thumb-edge); cursor: pointer; box-shadow: 0 0 8px var(--thumb); }
+    input[type=range].exp::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%;
+      background: var(--thumb); border: 2px solid var(--thumb-edge); cursor: pointer; }
+  </style>
 </head>
-<body style="margin:0;">
+<body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef } = React;
 
 // ═══════════════════════════════════════════════════════════════
 //  § 1  CONFIG
@@ -21,891 +44,940 @@ const CFG = {
   BASE_MAX:  10,
   BASE_INIT: 2,
   EXP_INIT:  3,
-  EXP_MAX: [0, 0, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+  EXP_CAP:   40,   // hard ceiling on the exponent slider
+  MAX_DIGITS: 15,  // keep bⁿ ≤ 10¹⁵ so every cell index is an exact double
 
-  // Full single-step durations (ms)
-  T_UP_ZOOM:   600,
-  T_UP_STRIP:  750,
-  T_UP_EXPAND: 700,
-  T_UP_SETTLE: 650,
-  T_DN_COLOR:  700,
-  T_DN_FOCUS:  800,
-  T_DN_DROP:   300,   // pause after zoom-in before settling
-  T_DN_SETTLE: 650,
+  // Full single-step durations (ms).  Intermediate steps of a multi-step
+  // jump replay the same animation, compressed (see Field.startStep).
+  T_UP: 2300,
+  T_DN: 1900,
+  UP_SPLIT: [0.56, 0.80],   // copy │ merge │ settle
+  DN_SPLIT: [0.28, 0.82],   // mark │ fold  │ settle
+  FAST_MIN: 0.035,          // shortest intermediate step, as a fraction of full
 
-  // Intermediate fast-step total duration (ms)
-  // Each intermediate plays a real abbreviated animation at this speed.
-  T_FAST: 260,
-
-  PANEL_FRAC:     0.62,
-  CELL_MAX:       54,
-  CELL_MIN:       2,
-  RECT_THRESHOLD: 64,
-
-  PANEL_DEFAULT: 460,
-  NAV_SIZE:       52,
+  CAM_TAU:      160,        // camera smoothing time-constant (ms)
+  CAM_TAU_FAST: 70,
+  FIT_PAD:      0.11,       // fraction of the panel kept clear around the blob
+  ZOOM_IN_MAX:  4000,       // px per cell
+  NUM_MIN_PX:   46,         // cell size at which cell numbers fade in
 
   BASE_HUES: [0, 0, 213, 159, 265, 25, 340, 50, 185, 300],
 };
+const expMax = b => Math.min(CFG.EXP_CAP, Math.floor(CFG.MAX_DIGITS / Math.log10(b) + 1e-9));
 
-const FONT = "'DM Mono', monospace";
-const DISP = "'DM Serif Display', serif";
+const FONT   = "'DM Mono', monospace";
+const DISP   = "'DM Serif Display', serif";
+const CVFONT = '"DM Mono", monospace';
 
 // ═══════════════════════════════════════════════════════════════
-//  § 2  THEME
+//  § 2  COLOR + THEME
 // ═══════════════════════════════════════════════════════════════
+function hslRgb(h, s, l) {
+  h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [f(0) * 255, f(8) * 255, f(4) * 255];
+}
+const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+const mix  = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+
 function makeTheme(base) {
-  const hue    = CFG.BASE_HUES[base] ?? (base * 37) % 360;
-  const accent  = `hsl(${hue},75%,62%)`;
-  const bg      = `hsl(${hue},40%,5%)`;
-  const cell    = `hsl(${hue},65%,48%)`;
-  const outline = `hsl(${hue},80%,72%)`;
-  const n = Math.max(base, 4);
-  const strip = Array.from({ length: n }, (_, i) => {
-    const l = Math.max(12, 72 - i * (52 / Math.max(n - 1, 3)));
-    return `hsl(${hue},70%,${l}%)`;
-  });
-  return { accent, bg, cell, outline, strip };
+  const hue = CFG.BASE_HUES[base] ?? (base * 37) % 360;
+  const c = (s, l, dh = 0) => hslRgb(hue + dh, s, l);
+  const rgb = {
+    accent:  c(75, 62),
+    bg:      c(40, 5),
+    cell:    c(65, 48),
+    outline: c(80, 72),
+    fresh:   c(85, 68, 32),   // newly made copies, before they fuse
+    gone:    c(15, 22),       // strips about to be folded away
+  };
+  return {
+    hue, rgb,
+    accent: rgba(rgb.accent), bg: rgba(rgb.bg), cell: rgba(rgb.cell), outline: rgba(rgb.outline),
+    a: (name, alpha) => rgba(rgb[name], alpha),
+    // Generation k = the cells added by step k.  Hue wobbles around the base hue.
+    gen: k => k === 0 ? rgb.outline : c(62, k % 2 ? 42 : 54, ((k * 37) % 120) - 60),
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 3  GEOMETRY
+//  § 3  GEOMETRY + FORMATTING
+//
+//  Stage k is a w×h block of bᵏ unit cells, anchored at the origin.
+//  Step k multiplies the width (odd k) or the height (even k) by b, so
+//  stage k = b copies of stage k−1 laid side by side.  Copy 0 is always
+//  the previous stage itself, which is why every earlier stage is nested
+//  in the top-left corner and the seed cell sits at (0,0).
 // ═══════════════════════════════════════════════════════════════
-function getDim(base, exp) {
-  if (exp === 0) return { w: 1, h: 1 };
-  const big = Math.pow(base, Math.ceil(exp / 2));
-  const sml = Math.pow(base, Math.floor(exp / 2));
-  return exp % 2 === 1 ? { w: big, h: sml } : { w: big, h: big };
-}
-function growAxis(exp) { return exp % 2 === 1 ? "w" : "h"; }
-function fitCell(dim, panelPx, gap) {
-  const f = CFG.PANEL_FRAC;
-  const fw = Math.floor((panelPx * f - (dim.w - 1) * gap) / dim.w);
-  const fh = Math.floor((panelPx * f - (dim.h - 1) * gap) / dim.h);
-  return Math.max(CFG.CELL_MIN, Math.min(CFG.CELL_MAX, Math.min(fw, fh)));
-}
-function gridPx(dim, cs, gap) {
-  return { w: dim.w * cs + (dim.w - 1) * gap, h: dim.h * cs + (dim.h - 1) * gap };
+const dims    = (b, k) => ({ w: Math.pow(b, Math.ceil(k / 2)), h: Math.pow(b, Math.floor(k / 2)) });
+const growsX  = k => k % 2 === 1;
+
+// Position of cell (x,y) in growth order: digit ℓ (base b) says which copy
+// the cell sits in at step ℓ.
+function cellIndex(b, x, y, n) {
+  let idx = 0, sx = 1, sy = 1, pw = 1;
+  for (let l = 1; l <= n; l++) {
+    let d;
+    if (growsX(l)) { d = Math.floor(x / sx) % b; sx *= b; }
+    else           { d = Math.floor(y / sy) % b; sy *= b; }
+    idx += d * pw; pw *= b;
+  }
+  return idx;
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  § 4  PHASES
-// ═══════════════════════════════════════════════════════════════
-const P = {
-  IDLE:      "idle",
-  UP_ZOOM:   "up_zoom",   // grid zooms out; new cells invisible
-  UP_STRIP:  "up_strip",  // new cells appear; strip colors shown
-  UP_EXPAND: "up_expand", // outline grows to full size
-  UP_SETTLE: "up_settle", // all cells flatten to theme.cell
-  DN_COLOR:  "dn_color",  // grid colored by strip (nothing moves)
-  DN_FOCUS:  "dn_focus",  // non-survivors fade; outline shrinks
-  DN_DROP:   "dn_drop",   // dispExp+bigExp flip → zoom to center
-  DN_SETTLE: "dn_settle", // cells flatten to theme.cell at correct size
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const seg     = (p, a, b) => clamp01((p - a) / (b - a));
+const smooth  = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const EASE = {
+  inOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  out:   t => 1 - Math.pow(1 - t, 3),
 };
-const UP_PHASES = [P.UP_ZOOM, P.UP_STRIP, P.UP_EXPAND, P.UP_SETTLE];
-const DN_PHASES = [P.DN_COLOR, P.DN_FOCUS, P.DN_DROP, P.DN_SETTLE];
+
+const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+const sup = n => String(n).split("").map(d => SUP[d]).join("");
+const sub = n => String(n).split("").map(d => SUB[d]).join("");
+const fmt = v => v.toLocaleString("en-US");
+const NAMES = [[1e15, "quadrillion"], [1e12, "trillion"], [1e9, "billion"], [1e6, "million"]];
+function named(v) {
+  for (const [t, nm] of NAMES) if (v >= t) return `${+(v / t).toPrecision(3)} ${nm}`;
+  return null;
+}
+function sci(v) {
+  let e = Math.floor(Math.log10(v)), m = v / Math.pow(10, e);
+  if (m >= 9.995) { m /= 10; e += 1; }
+  return `${m.toFixed(2)} × 10${sup(e)}`;
+}
 
 // ═══════════════════════════════════════════════════════════════
-//  § 5  SEQUENCER
+//  § 4  FIELD ENGINE  (canvas, camera, animation timeline)
 //
-//  Invariants:
-//    • bigExp/smallExp/dispExp change ONLY at the start of an animation
-//      step (runStepFast or runStep).  They never change mid-phase.
-//    • For DOWN, at DN_DROP we set bigExp=to so the grid zooms to
-//      the correctly-sized, centered state before settling.
-//    • liveRef is a ref copy of liveExp so changeExp always reads
-//      the true current visual position without stale-closure issues.
-//    • fast=true during intermediate steps → fold animations skipped.
-// ═══════════════════════════════════════════════════════════════
-function useSequencer(init) {
-  const [phase,    setPhase]    = useState(P.IDLE);
-  const [dispExp,  setDispExp]  = useState(init);
-  const [bigExp,   setBigExp]   = useState(init);
-  const [smallExp, setSmallExp] = useState(init);
-  const [liveExp,  setLiveExp]  = useState(init);
-  const [fast,     setFast]     = useState(false);
-
-  const liveRef = useRef(init);
-
-  const ts = useRef([]);
-  const clr = () => { ts.current.forEach(clearTimeout); ts.current = []; };
-  const aft = (fn, ms) => { const t = setTimeout(fn, ms); ts.current.push(t); };
-
-  const reset = useCallback((n) => {
-    clr();
-    liveRef.current = n;
-    setPhase(P.IDLE); setFast(false);
-    setDispExp(n); setBigExp(n); setSmallExp(n); setLiveExp(n);
-  }, []);
-
-  // ── Abbreviated step for intermediates (T_FAST ms total) ─────
-  // Does NOT call setPhase(IDLE) — the next aft in the chain
-  // immediately overrides the phase, giving a seamless handoff.
-  const runStepFast = useCallback((from, to, offset) => {
-    const F  = CFG.T_FAST;
-    if (to > from) {
-      // UP fast:  zoom → strip → settle  (skip expand)
-      const t1 = Math.round(F * 0.23);  // UP_ZOOM
-      const t2 = Math.round(F * 0.38);  // UP_STRIP
-      // UP_SETTLE fills the rest; next step overrides it
-      aft(() => {
-        setBigExp(to); setSmallExp(from); setDispExp(to);
-        liveRef.current = to; setLiveExp(to); setFast(true);
-        setPhase(P.UP_ZOOM);
-      }, offset);
-      aft(() => setPhase(P.UP_STRIP),  offset + t1);
-      aft(() => setPhase(P.UP_SETTLE), offset + t1 + t2);
-    } else {
-      // DN fast:  color → focus → drop+zoom → settle
-      // At DN_DROP we set bigExp=to so the grid immediately zooms
-      // to the correctly-sized, centered view.
-      const t1 = Math.round(F * 0.23);  // DN_COLOR
-      const t2 = Math.round(F * 0.38);  // DN_FOCUS
-      const t3 = Math.round(F * 0.10);  // DN_DROP hold
-      // DN_SETTLE fills the rest
-      aft(() => {
-        setBigExp(from); setSmallExp(to); setDispExp(from);
-        liveRef.current = to; setLiveExp(to); setFast(true);
-        setPhase(P.DN_COLOR);
-      }, offset);
-      aft(() => setPhase(P.DN_FOCUS), offset + t1);
-      aft(() => {
-        // Zoom to center: flip dispExp AND bigExp together
-        setDispExp(to); setBigExp(to); setSmallExp(to);
-        setPhase(P.DN_DROP);
-      }, offset + t1 + t2);
-      aft(() => setPhase(P.DN_SETTLE), offset + t1 + t2 + t3);
-    }
-    return offset + F;
-  }, []);
-
-  // ── Full animation for the final step ────────────────────────
-  const runStep = useCallback((from, to, offset) => {
-    const C = CFG;
-    if (to > from) {
-      // UP full:  zoom → strip → expand → settle → IDLE
-      aft(() => {
-        setBigExp(to); setSmallExp(from); setDispExp(to);
-        liveRef.current = to; setLiveExp(to); setFast(false);
-        setPhase(P.UP_ZOOM);
-      }, offset);
-      let d = offset + C.T_UP_ZOOM;
-      aft(() => setPhase(P.UP_STRIP),  d); d += C.T_UP_STRIP;
-      aft(() => setPhase(P.UP_EXPAND), d); d += C.T_UP_EXPAND;
-      aft(() => setPhase(P.UP_SETTLE), d); d += C.T_UP_SETTLE;
-      aft(() => { setSmallExp(to); setPhase(P.IDLE); }, d);
-    } else {
-      // DN full:  color → focus → drop+zoom → settle → IDLE
-      // Same zoom-to-center as fast: at DN_DROP set bigExp=to.
-      aft(() => {
-        setBigExp(from); setSmallExp(to); setDispExp(from);
-        liveRef.current = to; setLiveExp(to); setFast(false);
-        setPhase(P.DN_COLOR);
-      }, offset);
-      let d = offset + C.T_DN_COLOR;
-      aft(() => setPhase(P.DN_FOCUS), d); d += C.T_DN_FOCUS;
-      aft(() => {
-        setDispExp(to); setBigExp(to); setSmallExp(to);
-        setPhase(P.DN_DROP);
-      }, d); d += C.T_DN_DROP;
-      aft(() => setPhase(P.DN_SETTLE), d); d += C.T_DN_SETTLE;
-      aft(() => setPhase(P.IDLE), d);
-    }
-  }, []);
-
-  // ── Dispatcher: fast chain → full final ──────────────────────
-  const go = useCallback((from, to) => {
-    clr();
-    if (from === to) return;
-    const dir   = to > from ? 1 : -1;
-    const steps = Math.abs(to - from);
-    let offset  = 0;
-    for (let i = 0; i < steps - 1; i++) {
-      offset = runStepFast(from + dir * i, from + dir * (i + 1), offset);
-    }
-    runStep(to - dir, to, offset);
-  }, [runStepFast, runStep]);
-
-  return { phase, dispExp, bigExp, smallExp, liveExp, liveRef, fast, go, reset };
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  § 6  BACKGROUND DOT GRID (zooms with exp)
-// ═══════════════════════════════════════════════════════════════
-function BgZoom({ base, liveExp, theme }) {
-  const sp = Math.max(8, Math.round(46 / Math.pow(base, liveExp * 0.17)));
-  return (
-    <div style={{
-      position: "absolute", inset: 0, borderRadius: 18, pointerEvents: "none",
-      backgroundImage: `radial-gradient(circle at 1px 1px, ${theme.accent}12 1px, transparent 0)`,
-      backgroundSize: `${sp}px ${sp}px`,
-      transition: "background-size 0.5s ease",
-    }} />
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  § 7  CELL GRID  (≤ RECT_THRESHOLD cells)
+//  The whole picture lives in world units (1 unit = 1 cell).  The camera
+//  is {x, y, s}: world point at the panel centre and pixels per cell.
+//  Rendering is level-of-detail: blocks are filled as single rects and
+//  the cell / block seams are drawn as lines only where they are visible
+//  and at least a few pixels apart, so 10¹⁵ cells cost the same as 8.
 //
-//  cs and padL/padT are ALWAYS derived from bigExp so cells never
-//  move during a transition — only color and opacity change.
-//  After DN_DROP, bigExp == to so the grid re-centers at full size.
+//  Animation:  one step at a time, driven by requestAnimationFrame.
+//    UP   m→k   copy:   b−1 copies unfold out of the block like an accordion
+//                       while the camera pulls back to make room
+//               merge:  copies take the block colour, seams settle, the
+//                       outline jumps to the new size  (“solidify”)
+//               settle: camera finishes framing the new blob
+//    DOWN k→m   mark:   the b strips are shown; the extras grey out
+//               fold:   extras fold back under the survivor, camera follows
+//               settle
+//  A multi-step jump chains compressed steps and plays the last at full
+//  length.  If the user zooms or pans, `follow` turns off and the camera
+//  is theirs until they press Fit (or change the exponent).
 // ═══════════════════════════════════════════════════════════════
-function ExponentGrid({ base, dispExp, bigExp, smallExp, phase, fast, theme, panelPx }) {
-  const bigDim  = getDim(base, bigExp);
-  const smlDim  = getDim(base, smallExp);
-  const dispDim = getDim(base, dispExp);
-
-  const gap = bigDim.w * bigDim.h > 36 ? 1 : 2;
-  const cs  = fitCell(bigDim, panelPx, gap);
-  const br  = cs <= 5 ? 0 : cs <= 12 ? 1 : 2;
-
-  const bigGp  = gridPx(bigDim, cs, gap);
-  const smlGp  = gridPx(smlDim, cs, gap);
-  const dispGp = gridPx(dispDim, cs, gap);
-
-  const padL = Math.round((panelPx - bigGp.w) / 2);
-  const padT = Math.round((panelPx - bigGp.h) / 2);
-
-  const isDown = DN_PHASES.includes(phase);
-  const isUp   = UP_PHASES.includes(phase);
-  const axis   = growAxis(bigExp);
-
-  function getStrip(col, row) {
-    return axis === "w" ? Math.floor(col / smlDim.w) : Math.floor(row / smlDim.h);
-  }
-  function isSurvivor(col, row) {
-    return axis === "w" ? col < smlDim.w : row < smlDim.h;
-  }
-  function isNewCell(col, row) {
-    return axis === "w" ? col >= smlDim.w : row >= smlDim.h;
+class Field {
+  constructor(canvas, emit) {
+    this.cv = canvas; this.ctx = canvas.getContext("2d"); this.emit = emit;
+    this.b = CFG.BASE_INIT; this.n = 0; this.target = 0;
+    this.theme = makeTheme(this.b);
+    this.anim = null; this.journey = null; this.speed = 1;
+    this.opts = { layers: false, numbers: true, history: true };
+    this.cam = { x: 0.5, y: 0.5, s: 100 }; this.follow = true;
+    this.W = 1; this.H = 1; this.dpr = 1; this.sized = false; this.dirty = true;
+    this.ptrs = new Map(); this.lastEmit = "";
+    this.tick = this.tick.bind(this);
+    this.listen();
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(this.tick);
   }
 
-  // Outline rectangle — width/height CSS-transitioned
-  let outW = bigGp.w, outH = bigGp.h;
-  if (isUp) {
-    const grown = [P.UP_EXPAND, P.UP_SETTLE].includes(phase);
-    outW = grown ? bigGp.w : smlGp.w;
-    outH = grown ? bigGp.h : smlGp.h;
-  } else if (isDown) {
-    // After DN_DROP bigExp==to so smlGp==bigGp; outline is at full target size.
-    const shrunk = [P.DN_FOCUS, P.DN_DROP, P.DN_SETTLE].includes(phase);
-    outW = shrunk ? smlGp.w : bigGp.w;
-    outH = shrunk ? smlGp.h : bigGp.h;
+  destroy() { cancelAnimationFrame(this.raf); this.unlisten(); }
+
+  // ── public API ───────────────────────────────────────────────
+  resize(w, h) {
+    this.dpr = window.devicePixelRatio || 1;
+    this.W = Math.max(1, w); this.H = Math.max(1, h);
+    this.cv.width = Math.round(this.W * this.dpr); this.cv.height = Math.round(this.H * this.dpr);
+    if (!this.sized) { this.sized = true; Object.assign(this.cam, this.fitTo(dims(this.b, this.n))); }
+    this.dirty = true;
+  }
+  setBase(b, n) {
+    this.b = b; this.n = this.target = n; this.anim = null; this.journey = null;
+    this.theme = makeTheme(b); this.follow = true;
+    Object.assign(this.cam, this.fitTo(dims(b, n)));
+    this.dirty = true; this.emitState();
+  }
+  setTarget(n) { this.target = n; this.follow = true; this.journey = null; this.emitState(); }
+  setOpts(o)   { Object.assign(this.opts, o); this.dirty = true; }
+  setSpeed(s)  { this.speed = s; }
+  recenter()   { this.follow = true; this.journey = null; this.emitState(); }
+  zoomBy(f)    { this.zoomAt(this.W / 2, this.H / 2, f); }
+  replay() {
+    if (this.anim || this.n === 0) return;
+    this.follow = false; this.journey = { stage: "dive", t: 0, k: 0 };
+    this.emitState();
   }
 
-  const totalBig  = Math.pow(base, bigExp);
-  const totalSml  = Math.pow(base, smallExp);
-  const totalDisp = Math.pow(base, dispExp);
-  const showMath  = [P.UP_STRIP, P.UP_EXPAND, P.DN_COLOR, P.DN_FOCUS].includes(phase);
-  const merging   = phase === P.UP_EXPAND;
-  const splitting = phase === P.DN_FOCUS;
+  // ── state → React ────────────────────────────────────────────
+  phaseInfo() {
+    const a = this.anim;
+    if (!a) return { phase: "idle", live: this.n, from: this.n, to: this.n, fast: false };
+    const [s0, s1] = a.dir > 0 ? CFG.UP_SPLIT : CFG.DN_SPLIT;
+    const i = a.p < s0 ? 0 : a.p < s1 ? 1 : 2;
+    const phase = (a.dir > 0 ? ["copy", "merge", "settle"] : ["mark", "fold", "settle"])[i];
+    return { phase, live: i === 0 ? a.from : a.to, from: a.from, to: a.to, fast: a.fast };
+  }
+  emitState() {
+    const s = { ...this.phaseInfo(), n: this.n, follow: this.follow,
+                replay: this.journey ? this.journey.k : null };
+    const key = JSON.stringify(s);
+    if (key !== this.lastEmit) { this.lastEmit = key; this.emit(s); }
+  }
 
-  const mathStr = isDown
-    ? (splitting ? `${totalBig.toLocaleString()} ÷ ${base} = ${totalSml.toLocaleString()}`
-        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "))
-    : (merging ? `${base} × ${totalSml.toLocaleString()} = ${totalBig.toLocaleString()}`
-        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "));
+  // ── timeline ─────────────────────────────────────────────────
+  startStep() {
+    const dir = Math.sign(this.target - this.n), rem = Math.abs(this.target - this.n);
+    const f = rem <= 1 ? 1 : Math.max(CFG.FAST_MIN, 0.35 / Math.pow(rem - 1, 0.8));
+    this.anim = { dir, from: this.n, to: this.n + dir, p: 0, fast: rem > 1,
+                  dur: (dir > 0 ? CFG.T_UP : CFG.T_DN) * f / this.speed };
+    this.journey = null;
+  }
 
-  const cells = Array.from({ length: dispDim.w * dispDim.h }, (_, i) => {
-    const col   = i % dispDim.w;
-    const row   = Math.floor(i / dispDim.w);
-    const sc    = theme.strip[Math.min(getStrip(col, row), theme.strip.length - 1)];
-    const surv  = isSurvivor(col, row);
-    const isNew = isNewCell(col, row);
-    let bg = theme.cell, op = 1, anim, delay;
+  tick(now) {
+    this.raf = requestAnimationFrame(this.tick);
+    const dt = Math.min(50, now - this.last); this.last = now;
+    let busy = this.dirty;
 
-    if (isUp) {
-      if (phase === P.UP_ZOOM) {
-        // Survivor cells visible at new (smaller) size; new cells hidden
-        op = isNew ? 0 : 1;
+    if (!this.anim && this.target !== this.n) this.startStep();
+    const a = this.anim;
+    if (a) {
+      busy = true;
+      // Heading the other way now?  Finish this step quickly, then turn round.
+      const reversing = (this.target - a.to) * a.dir < 0;
+      a.p = Math.min(1, a.p + (dt / a.dur) * (reversing ? 3 : 1));
+      if (a.p >= 1) {
+        this.n = a.to; this.anim = null;
+        if (this.target !== this.n) this.startStep();
       }
-      if (phase === P.UP_STRIP) {
-        bg = sc;
-        if (isNew) {
-          if (!fast) {
-            // Full step: fold animation
-            anim  = axis === "w" ? "foldInX" : "foldInY";
-            const pos = axis === "w"
-              ? (col - smlDim.w) + row * (bigDim.w - smlDim.w)
-              : (row - smlDim.h) + col * (bigDim.h - smlDim.h);
-            delay = `${Math.min(Math.abs(pos) * 15, 160)}ms`;
-          }
-          // fast step: new cells fade in via opacity transition (op=1 default)
-        }
-      }
-      if (phase === P.UP_EXPAND) { bg = sc; }
-      // UP_SETTLE: bg = theme.cell (default)
-    } else if (isDown) {
-      // dispExp === bigExp before DN_DROP (full grid shown)
-      if (dispExp === bigExp) {
-        if (phase === P.DN_COLOR) { bg = sc; }
-        if (phase === P.DN_FOCUS) { bg = sc; op = surv ? 1 : 0; }
-      }
-      // After DN_DROP bigExp=to=smallExp=dispExp — dispDim is the small grid.
-      // All cells here ARE the survivors so they're always op=1.
-      if (phase === P.DN_DROP)   { bg = sc; }
-      // DN_SETTLE: bg = theme.cell (default)
+      this.emitState();
     }
-    return { bg, op, anim, delay };
-  });
 
-  return (
-    <div style={{ position: "absolute", inset: 0 }}>
-
-      {/* Outline */}
-      <div style={{
-        position: "absolute", left: padL, top: padT,
-        width: outW, height: outH,
-        border: `3px solid ${theme.outline}`, borderRadius: br + 3,
-        boxShadow: `0 0 18px ${theme.accent}55, 0 0 36px ${theme.accent}22`,
-        pointerEvents: "none", zIndex: 10,
-        transition: "width 0.65s cubic-bezier(0.4,0,0.2,1), height 0.65s cubic-bezier(0.4,0,0.2,1)",
-      }} />
-
-      {/* Cells */}
-      <div style={{
-        position: "absolute", left: padL, top: padT,
-        display: "grid",
-        gridTemplateColumns: `repeat(${dispDim.w}, ${cs}px)`,
-        gridTemplateRows:    `repeat(${dispDim.h}, ${cs}px)`,
-        gap: `${gap}px`,
-      }}>
-        {cells.map(({ bg, op, anim, delay }, i) => (
-          <div key={i} style={{
-            width: cs, height: cs, borderRadius: br,
-            background: bg, opacity: op,
-            transition: "background 0.5s ease, opacity 0.5s ease",
-            animation: anim ? `${anim} 0.65s cubic-bezier(0.34,1.4,0.64,1) both` : undefined,
-            animationDelay: delay,
-          }} />
-        ))}
-      </div>
-
-      {/* Strip count labels */}
-      {showMath && Array.from({ length: base }, (_, s) => {
-        const color = theme.strip[Math.min(s, theme.strip.length - 1)];
-        const fade  = (isDown && phase === P.DN_FOCUS && s > 0)
-                   || (isUp   && phase === P.UP_ZOOM  && s > 0);
-        let lx, ly;
-        if (axis === "w") {
-          const sw = smlDim.w * (cs + gap);
-          lx = padL + s * sw + sw / 2; ly = padT - 22;
-        } else {
-          const sh = smlDim.h * (cs + gap);
-          lx = padL + bigGp.w + 12; ly = padT + s * sh + sh / 2;
-        }
-        return (
-          <div key={`lbl-${s}`} style={{
-            position: "absolute", left: lx, top: ly,
-            transform: "translate(-50%,-50%)",
-            fontFamily: FONT, fontSize: Math.max(9, Math.min(14, cs * 0.8)),
-            fontWeight: 700, color, opacity: fade ? 0 : 1,
-            transition: "opacity 0.4s ease", pointerEvents: "none",
-            whiteSpace: "nowrap", textShadow: `0 0 8px ${color}bb`,
-          }}>{totalSml.toLocaleString()}</div>
-        );
-      })}
-
-      {/* Math annotation */}
-      <div style={{
-        position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-        fontFamily: FONT, fontSize: Math.max(9, Math.min(14, cs * 0.75)),
-        color: (merging || splitting) ? theme.outline : `${theme.accent}77`,
-        fontWeight: (merging || splitting) ? 700 : 400, letterSpacing: "0.03em",
-        opacity: showMath ? 1 : 0, transition: "opacity 0.4s, color 0.3s",
-        pointerEvents: "none", whiteSpace: "nowrap",
-        textShadow: (merging || splitting) ? `0 0 10px ${theme.accent}` : "none",
-      }}>{mathStr}</div>
-
-      {/* Idle total */}
-      <div style={{
-        position: "absolute", bottom: "7%", right: "8%",
-        fontFamily: FONT, fontSize: Math.max(10, Math.min(18, cs * 0.9)),
-        color: theme.outline, fontWeight: 700, letterSpacing: "-0.02em",
-        textShadow: `0 0 10px ${theme.accent}`, pointerEvents: "none",
-        opacity: phase === P.IDLE ? 1 : 0, transition: "opacity 0.4s 0.3s",
-      }}>{totalDisp.toLocaleString()}</div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  § 8  BAND RENDERER  (> RECT_THRESHOLD cells)
-//  Same invariants as ExponentGrid.
-// ═══════════════════════════════════════════════════════════════
-function RectGrid({ base, dispExp, bigExp, smallExp, phase, fast, theme, panelPx }) {
-  const bigDim = getDim(base, bigExp);
-  const smlDim = getDim(base, smallExp);
-  const gap    = 2;
-  const cs     = fitCell(bigDim, panelPx, gap);
-  const bigGp  = gridPx(bigDim, cs, gap);
-  const smlGp  = gridPx(smlDim, cs, gap);
-  const dispGp = gridPx(getDim(base, dispExp), cs, gap);
-
-  const padL = Math.round((panelPx - bigGp.w) / 2);
-  const padT = Math.round((panelPx - bigGp.h) / 2);
-
-  const isDown = DN_PHASES.includes(phase);
-  const isUp   = UP_PHASES.includes(phase);
-  const axis   = growAxis(bigExp);
-
-  let outW = bigGp.w, outH = bigGp.h;
-  if (isUp) {
-    const grown  = [P.UP_EXPAND, P.UP_SETTLE].includes(phase);
-    outW = grown ? bigGp.w : smlGp.w; outH = grown ? bigGp.h : smlGp.h;
-  } else if (isDown) {
-    const shrunk = [P.DN_FOCUS, P.DN_DROP, P.DN_SETTLE].includes(phase);
-    outW = shrunk ? smlGp.w : bigGp.w; outH = shrunk ? smlGp.h : bigGp.h;
+    if (this.journey) { busy = true; this.stepJourney(dt); }
+    else if (this.follow) {
+      const tau = this.anim && this.anim.fast ? CFG.CAM_TAU_FAST : CFG.CAM_TAU;
+      if (this.approach(this.followTarget(), dt, tau)) busy = true;
+    }
+    if (busy) { this.draw(); this.dirty = false; }
   }
 
-  const totalBig  = Math.pow(base, bigExp);
-  const totalSml  = Math.pow(base, smallExp);
-  const totalDisp = Math.pow(base, dispExp);
-  const showMath  = [P.UP_STRIP, P.UP_EXPAND, P.DN_COLOR, P.DN_FOCUS].includes(phase);
-  const merging   = phase === P.UP_EXPAND;
-  const splitting = phase === P.DN_FOCUS;
-  const frac      = 1 / base;
+  // ── camera ───────────────────────────────────────────────────
+  fitTo(d) {
+    const pad = Math.max(24, Math.min(this.W, this.H) * CFG.FIT_PAD);
+    const s = Math.min((this.W - 2 * pad) / d.w, (this.H - 2 * pad) / d.h);
+    return { x: d.w / 2, y: d.h / 2, s: Math.max(1e-9, s) };
+  }
+  // Ease toward tg: scale in log space, and the target centre's *screen*
+  // offset decays — so even a 10⁶× zoom change stays visually smooth.
+  approach(tg, dt, tau) {
+    const c = this.cam, k = 1 - Math.exp(-dt / tau);
+    const ls = Math.log(c.s), lt = Math.log(tg.s);
+    const s2 = Math.exp(ls + (lt - ls) * k);
+    const dx = (tg.x - c.x) * c.s, dy = (tg.y - c.y) * c.s;
+    c.x = tg.x - (dx * (1 - k)) / s2; c.y = tg.y - (dy * (1 - k)) / s2; c.s = s2;
+    return Math.abs(lt - ls) > 1e-4 || Math.hypot(dx, dy) > 0.3;
+  }
+  followTarget() {
+    const a = this.anim, b = this.b;
+    if (!a) return this.fitTo(dims(b, this.n));
+    const big = a.dir > 0 ? a.to : a.from, d = dims(b, big - 1);
+    const [s0, s1] = a.dir > 0 ? CFG.UP_SPLIT : CFG.DN_SPLIT;
+    // Going up the camera leads the copies; going down it trails the fold.
+    const q = a.dir > 0 ? EASE.out(seg(a.p, 0, s0 * 0.8)) : 1 - EASE.inOut(seg(a.p, s0, s1));
+    const g = 1 + (b - 1) * q;
+    return this.fitTo(growsX(big) ? { w: d.w * g, h: d.h } : { w: d.w, h: d.h * g });
+  }
+  // Continuous stage u ∈ [0, n]: the growing axis scales by b^frac.
+  extentAt(u) {
+    const k = Math.floor(u), f = u - k, d = dims(this.b, k);
+    if (f > 0) { if (growsX(k + 1)) d.w *= Math.pow(this.b, f); else d.h *= Math.pow(this.b, f); }
+    return d;
+  }
+  // Replay: dive into the seed cell, pause, then pull back through every stage.
+  stepJourney(dt) {
+    const j = this.journey, n = this.n;
+    if (j.stage === "dive") {
+      const tg = this.fitTo(dims(this.b, 0));
+      const moving = this.approach(tg, dt, 200);
+      if (!moving || Math.abs(Math.log(this.cam.s / tg.s)) < 0.01) { j.stage = "hold"; j.t = 0; }
+    } else if (j.stage === "hold") {
+      j.t += dt;
+      if (j.t > 500) { j.stage = "rise"; j.t = 0; }
+    } else {
+      const T = Math.min(14000, 900 + n * 900) / this.speed;
+      j.t += dt;
+      const u = EASE.inOut(clamp01(j.t / T)) * n;
+      Object.assign(this.cam, this.fitTo(this.extentAt(u)));
+      j.k = Math.min(n, Math.floor(u + 1e-6));
+      if (j.t >= T) { this.journey = null; this.follow = true; }
+    }
+    this.emitState();
+  }
+  zoomAt(px, py, f) {
+    const c = this.cam;
+    const sMin = this.fitTo(dims(this.b, Math.max(this.n, this.target))).s / 30;
+    const s2 = Math.min(CFG.ZOOM_IN_MAX, Math.max(sMin, c.s * f));
+    const ox = px - this.W / 2, oy = py - this.H / 2;
+    const wx = c.x + ox / c.s, wy = c.y + oy / c.s;
+    c.x = wx - ox / s2; c.y = wy - oy / s2; c.s = s2;
+    this.userMoved();
+  }
+  userMoved() {
+    if (this.follow || this.journey) { this.follow = false; this.journey = null; this.emitState(); }
+    this.dirty = true;
+  }
 
-  const mathStr = isDown
-    ? (splitting ? `${totalBig.toLocaleString()} ÷ ${base} = ${totalSml.toLocaleString()}`
-        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "))
-    : (merging ? `${base} × ${totalSml.toLocaleString()} = ${totalBig.toLocaleString()}`
-        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "));
+  // ── input: wheel / drag / pinch / double-click ───────────────
+  listen() {
+    const cv = this.cv, rect = () => cv.getBoundingClientRect();
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    this.h = {
+      wheel: e => {
+        e.preventDefault();
+        const r = rect(), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+        this.zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-dy * 0.0016));
+      },
+      down: e => { cv.setPointerCapture(e.pointerId); this.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); },
+      move: e => {
+        const p = this.ptrs.get(e.pointerId);
+        if (!p) return;
+        const c = this.cam;
+        if (this.ptrs.size === 1) {
+          c.x -= (e.clientX - p.x) / c.s; c.y -= (e.clientY - p.y) / c.s;
+          p.x = e.clientX; p.y = e.clientY;
+          this.userMoved();
+        } else if (this.ptrs.size === 2) {
+          const [a, b] = [...this.ptrs.values()];
+          const d0 = Math.hypot(a.x - b.x, a.y - b.y), m0 = mid(a, b);
+          p.x = e.clientX; p.y = e.clientY;
+          const d1 = Math.hypot(a.x - b.x, a.y - b.y), m1 = mid(a, b), r = rect();
+          c.x -= (m1.x - m0.x) / c.s; c.y -= (m1.y - m0.y) / c.s;
+          this.zoomAt(m1.x - r.left, m1.y - r.top, d1 / Math.max(1, d0));
+        }
+      },
+      up:  e => { this.ptrs.delete(e.pointerId); },
+      dbl: () => this.recenter(),
+    };
+    cv.addEventListener("wheel", this.h.wheel, { passive: false });
+    cv.addEventListener("pointerdown", this.h.down);
+    cv.addEventListener("pointermove", this.h.move);
+    cv.addEventListener("pointerup", this.h.up);
+    cv.addEventListener("pointercancel", this.h.up);
+    cv.addEventListener("dblclick", this.h.dbl);
+  }
+  unlisten() {
+    const cv = this.cv;
+    cv.removeEventListener("wheel", this.h.wheel);
+    cv.removeEventListener("pointerdown", this.h.down);
+    cv.removeEventListener("pointermove", this.h.move);
+    cv.removeEventListener("pointerup", this.h.up);
+    cv.removeEventListener("pointercancel", this.h.up);
+    cv.removeEventListener("dblclick", this.h.dbl);
+  }
 
-  return (
-    <div style={{ position: "absolute", inset: 0 }}>
+  // ── drawing primitives ───────────────────────────────────────
+  X(x) { return (x - this.cam.x) * this.cam.s + this.W / 2; }
+  Y(y) { return (y - this.cam.y) * this.cam.s + this.H / 2; }
+  view() {
+    const c = this.cam, hw = this.W / 2 / c.s, hh = this.H / 2 / c.s;
+    return { x0: c.x - hw, x1: c.x + hw, y0: c.y - hh, y1: c.y + hh };
+  }
+  // World rect → screen rect clipped to just outside the canvas (huge
+  // blobs would otherwise hand the canvas coordinates in the billions).
+  scr(x, y, w, h, m) {
+    let x0 = this.X(x), y0 = this.Y(y), x1 = this.X(x + w), y1 = this.Y(y + h);
+    if (x1 < -m || y1 < -m || x0 > this.W + m || y0 > this.H + m) return null;
+    x0 = Math.max(x0, -m); y0 = Math.max(y0, -m);
+    x1 = Math.min(x1, this.W + m); y1 = Math.min(y1, this.H + m);
+    return [x0, y0, x1 - x0, y1 - y0];
+  }
+  fillW(x, y, w, h, color, alpha = 1) {
+    if (alpha <= 0.004) return;
+    const r = this.scr(x, y, w, h, 2);
+    if (!r) return;
+    const ctx = this.ctx;
+    ctx.globalAlpha = alpha; ctx.fillStyle = rgba(color);
+    ctx.fillRect(r[0], r[1], r[2], r[3]);
+    ctx.globalAlpha = 1;
+  }
+  strokeW(x, y, w, h, color, alpha, lw, glow = 0) {
+    if (alpha <= 0.004) return;
+    const r = this.scr(x, y, w, h, 40);
+    if (!r) return;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.globalAlpha = alpha; ctx.strokeStyle = rgba(color); ctx.lineWidth = lw;
+    if (glow > 0) { ctx.shadowColor = rgba(this.theme.rgb.accent, 0.9); ctx.shadowBlur = glow; }
+    ctx.strokeRect(r[0], r[1], r[2], r[3]);
+    ctx.restore();
+  }
 
-      {/* Outline */}
-      <div style={{
-        position: "absolute", left: padL, top: padT,
-        width: outW, height: outH,
-        border: `3px solid ${theme.outline}`, borderRadius: 4,
-        boxShadow: `0 0 18px ${theme.accent}55, 0 0 36px ${theme.accent}22`,
-        pointerEvents: "none", zIndex: 10,
-        transition: "width 0.65s cubic-bezier(0.4,0,0.2,1), height 0.65s cubic-bezier(0.4,0,0.2,1)",
-      }} />
+  // World-aligned dot lattice at powers of b — two adjacent levels
+  // cross-fade, so zooming never runs out of texture.
+  drawDots() {
+    const b = this.b, s = this.cam.s, BASE_PX = 22;
+    const i = Math.ceil(Math.log(BASE_PX / s) / Math.log(b));
+    const fine = Math.pow(b, i);
+    this.dotLayer(fine, 0.3 * smooth(BASE_PX, BASE_PX * b, fine * s));
+    this.dotLayer(fine * b, 0.3);
+  }
+  dotLayer(sp, alpha) {
+    if (alpha < 0.01) return;
+    const ctx = this.ctx, v = this.view();
+    ctx.fillStyle = this.theme.a("accent", alpha);
+    for (let gx = Math.ceil(v.x0 / sp) * sp; gx <= v.x1; gx += sp) {
+      const X = this.X(gx);
+      for (let gy = Math.ceil(v.y0 / sp) * sp; gy <= v.y1; gy += sp) ctx.fillRect(X - 0.75, this.Y(gy) - 0.75, 1.5, 1.5);
+    }
+  }
 
-      {/* Bands */}
-      <div style={{
-        position: "absolute", left: padL, top: padT, width: dispGp.w, height: dispGp.h,
-        transformOrigin: "center center",
-        "--ssx": (smlGp.w / bigGp.w).toFixed(4),
-        "--ssy": (smlGp.h / bigGp.h).toFixed(4),
-        animation: (isUp && phase === P.UP_ZOOM && !fast)
-          ? `zoomOutBands ${CFG.T_UP_ZOOM}ms ease-out both`
-          : undefined,
-      }}>
-        {Array.from({ length: base }, (_, s) => {
-          const color  = theme.strip[Math.min(s, theme.strip.length - 1)];
-          const isSurv = s === 0;
-          let bx = 0, by = 0, bw = dispGp.w, bh = dispGp.h;
-          if (axis === "w") { bw = Math.round(dispGp.w * frac); bx = s * bw; }
-          else              { bh = Math.round(dispGp.h * frac); by = s * bh; }
+  // Seams inside a stage-n block at (ox,oy): cell gaps plus thicker lines
+  // at every block boundary (bⁱ cells apart).  Each level fades in once its
+  // spacing is a few pixels, and only lines in view are drawn.
+  gridLines(ox, oy, n, alpha = 1) {
+    if (n === 0 || alpha <= 0.004) return;
+    const { b, ctx } = this, s = this.cam.s, d = dims(b, n), v = this.view();
+    const rx0 = Math.max(ox, v.x0), rx1 = Math.min(ox + d.w, v.x1);
+    const ry0 = Math.max(oy, v.y0), ry1 = Math.min(oy + d.h, v.y1);
+    if (rx0 >= rx1 || ry0 >= ry1) return;
+    ctx.strokeStyle = this.theme.bg;
+    const pass = (levels, vertical) => {
+      for (let i = 0; i < levels; i++) {
+        const sp = Math.pow(b, i), px = sp * s;
+        if (px < 3) continue;
+        const lo = vertical ? rx0 - ox : ry0 - oy, hi = vertical ? rx1 - ox : ry1 - oy;
+        const j0 = Math.max(1, Math.ceil(lo / sp));
+        const j1 = Math.min(Math.floor(hi / sp), (vertical ? d.w : d.h) / sp - 1);
+        if (j1 < j0) continue;
+        ctx.globalAlpha = alpha * smooth(3, 14, px);
+        ctx.lineWidth = Math.min(1.5 + i * 0.75, Math.max(0.6, px * 0.05));
+        ctx.beginPath();
+        for (let j = j0; j <= j1; j++) {
+          if (j % b === 0) continue;               // drawn by a coarser level
+          if (vertical) { const X = this.X(ox + j * sp); ctx.moveTo(X, this.Y(ry0)); ctx.lineTo(X, this.Y(ry1)); }
+          else          { const Y = this.Y(oy + j * sp); ctx.moveTo(this.X(rx0), Y); ctx.lineTo(this.X(rx1), Y); }
+        }
+        ctx.stroke();
+      }
+    };
+    pass(Math.ceil(n / 2), true);
+    pass(Math.floor(n / 2), false);
+    ctx.globalAlpha = 1;
+  }
 
-          let bg = theme.cell, op = 1;
-          if (isUp) {
-            const isNew = s > 0;
-            if (phase === P.UP_ZOOM)   { op = isNew ? 0 : 1; }
-            if (phase === P.UP_STRIP)  { bg = color; }
-            if (phase === P.UP_EXPAND) { bg = color; }
-          } else if (isDown) {
-            if (phase === P.DN_COLOR && dispExp === bigExp) { bg = color; }
-            if (phase === P.DN_FOCUS && dispExp === bigExp) { bg = color; op = isSurv ? 1 : 0; }
-            if (phase === P.DN_DROP)   { bg = color; op = isSurv ? 1 : 0; }
-            if (phase === P.DN_SETTLE) { op = isSurv ? 1 : 0; }
-          }
+  // When cells are big enough: each cell's count (1-based) and its
+  // base-b address — digit ℓ = which copy it landed in at step ℓ.
+  cellNumbers(ox, oy, n, off, digits, alpha = 1) {
+    const s = this.cam.s;
+    if (!this.opts.numbers || s < CFG.NUM_MIN_PX || alpha <= 0.01) return;
+    const { b, ctx } = this, d = dims(b, n), v = this.view();
+    const cx0 = Math.max(0, Math.floor(v.x0 - ox)), cx1 = Math.min(d.w, Math.ceil(v.x1 - ox));
+    const cy0 = Math.max(0, Math.floor(v.y0 - oy)), cy1 = Math.min(d.h, Math.ceil(v.y1 - oy));
+    if (cx1 <= cx0 || cy1 <= cy0 || (cx1 - cx0) * (cy1 - cy0) > 800) return;
+    const a = alpha * smooth(CFG.NUM_MIN_PX, CFG.NUM_MIN_PX * 1.6, s);
+    const fs = Math.min(s * 0.24, 34);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let cy = cy0; cy < cy1; cy++) for (let cx = cx0; cx < cx1; cx++) {
+      const idx = off + cellIndex(b, cx, cy, n);
+      const X = this.X(ox + cx + 0.5), Y = this.Y(oy + cy + 0.5);
+      const addr = b !== 10 && digits > 0 ? idx.toString(b).padStart(digits, "0") + sub(b) : "";
+      const fs2 = addr ? Math.min(fs * 0.55, (s * 0.84) / (addr.length * 0.62)) : 0;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.font = `500 ${fs}px ${CVFONT}`;
+      ctx.fillText(fmt(idx + 1), X, fs2 >= 6 ? Y - fs * 0.35 : Y);
+      if (fs2 >= 6) {
+        ctx.globalAlpha = a * 0.6;
+        ctx.font = `400 ${fs2}px ${CVFONT}`;
+        ctx.fillText(addr, X, Y + fs * 0.5);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
 
-          const doFold = isUp && s > 0 && phase === P.UP_STRIP && !fast;
-          return (
-            <div key={s} style={{
-              position: "absolute", left: bx, top: by, width: bw, height: bh,
-              background: bg, opacity: op,
-              transition: "opacity 0.5s ease, background 0.5s ease",
-              animation: doFold
-                ? (axis === "w" ? "foldInX 0.7s cubic-bezier(0.34,1.3,0.64,1) both"
-                                : "foldInY 0.7s cubic-bezier(0.34,1.3,0.64,1) both")
-                : undefined,
-              animationDelay: doFold ? `${(s - 1) * 100}ms` : undefined,
-              borderLeft: s > 0 && axis === "w" ? `1px solid ${theme.bg}55` : undefined,
-              borderTop:  s > 0 && axis === "h" ? `1px solid ${theme.bg}55` : undefined,
-            }} />
-          );
-        })}
+  // Fill a whole stage-n block: one rect, or one rect per generation.
+  fillStage(n) {
+    const { b } = this, T = this.theme;
+    if (this.opts.layers) {
+      for (let k = n; k >= 1; k--) {
+        const d = dims(b, k - 1), gx = growsX(k);
+        for (let j = 1; j < b; j++) this.fillW(gx ? j * d.w : 0, gx ? 0 : j * d.h, d.w, d.h, T.gen(k));
+      }
+      this.fillW(0, 0, 1, 1, T.gen(0));
+    } else {
+      const d = dims(b, n);
+      this.fillW(0, 0, d.w, d.h, T.rgb.cell);
+      // the seed — the one cell everything grew from
+      this.fillW(0, 0, 1, 1, T.rgb.outline, 0.45 * smooth(4, 24, this.cam.s));
+    }
+  }
 
-        {/* Strip labels */}
-        {showMath && Array.from({ length: base }, (_, s) => {
-          const color = theme.strip[Math.min(s, theme.strip.length - 1)];
-          const fade  = isDown && phase === P.DN_FOCUS && s > 0;
-          let lx, ly;
-          if (axis === "w") {
-            lx = s * Math.round(dispGp.w * frac) + Math.round(dispGp.w * frac) / 2;
-            ly = -20;
-          } else {
-            lx = dispGp.w + 12;
-            ly = s * Math.round(dispGp.h * frac) + Math.round(dispGp.h * frac) / 2;
-          }
-          return (
-            <div key={`lbl-${s}`} style={{
-              position: "absolute", left: lx, top: ly,
-              transform: "translate(-50%,-50%)",
-              fontFamily: FONT, fontSize: Math.max(9, Math.min(14, cs * 0.7)),
-              fontWeight: 700, color, opacity: fade ? 0 : 1,
-              transition: "opacity 0.4s ease", pointerEvents: "none",
-              whiteSpace: "nowrap", textShadow: `0 0 8px ${color}bb`,
-            }}>{totalSml.toLocaleString()}</div>
-          );
-        })}
-      </div>
+  // ── labels + outlines ────────────────────────────────────────
+  textBox(text, x, y, fs, color, alpha, align) {
+    const ctx = this.ctx;
+    ctx.font = `500 ${fs}px ${CVFONT}`;
+    const w = ctx.measureText(text).width, padX = 5, h = fs + 6;
+    const left = align === "right" ? x - w - padX * 2 : x - w / 2 - padX;
+    ctx.globalAlpha = alpha * 0.75; ctx.fillStyle = this.theme.bg;
+    ctx.fillRect(left, y - h / 2, w + padX * 2, h);
+    ctx.globalAlpha = alpha; ctx.fillStyle = color;
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(text, left + padX, y + 0.5);
+    ctx.globalAlpha = 1;
+  }
+  // Label in the bottom-right corner of stage k.  The current stage's
+  // label clamps into view so it never gets lost while zoomed in.
+  stageLabel(k, alpha, main) {
+    if (alpha <= 0.01) return;
+    const { b } = this, s = this.cam.s, d = dims(b, k), wp = d.w * s, hp = d.h * s;
+    if (Math.min(wp, hp) < (main ? 36 : 48)) return;
+    let x = this.X(d.w), y = this.Y(d.h);
+    if (main) {
+      if (this.X(0) > this.W || this.Y(0) > this.H) return;
+      x = Math.min(x, this.W); y = Math.min(y, this.H);
+      if (x < 60 || y < 30) return;
+    }
+    else if (x > this.W + 2 || y > this.H + 2 || x < 0 || y < 0) return;
+    const fs = main ? 14 : 11;
+    const full = `${b}${sup(k)} = ${fmt(Math.pow(b, k))}`, short = `${b}${sup(k)}`;
+    this.ctx.font = `500 ${fs}px ${CVFONT}`;
+    const room = Math.min(wp, x) - 14;
+    const text = this.ctx.measureText(full).width + 10 <= room ? full
+               : this.ctx.measureText(short).width + 10 <= room ? short : null;
+    if (!text || hp < fs + 14) return;
+    // queued, so the current stage and bigger stages win any overlap
+    this.labels.push({ text, x: x - 7, y: y - fs / 2 - 9, fs, alpha, prio: main ? 1e3 + k : k });
+  }
+  flushLabels() {
+    const ctx = this.ctx, placed = [];
+    this.labels.sort((p, q) => q.prio - p.prio);
+    for (const l of this.labels) {
+      ctx.font = `500 ${l.fs}px ${CVFONT}`;
+      const w = ctx.measureText(l.text).width + 14, h = l.fs + 8;
+      const box = [l.x - w, l.y - h / 2, l.x, l.y + h / 2];
+      if (placed.some(o => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])) continue;
+      placed.push(box);
+      this.textBox(l.text, l.x, l.y, l.fs, this.theme.outline, l.alpha, "right");
+    }
+    this.labels = [];
+  }
+  drawHistory(upTo) {
+    if (!this.opts.history) return;
+    const s = this.cam.s;
+    for (let k = 0; k <= upTo; k++) {
+      const d = dims(this.b, k), a = 0.5 * smooth(10, 50, Math.min(d.w, d.h) * s);
+      if (a <= 0.01) continue;
+      this.strokeW(0, 0, d.w, d.h, this.theme.rgb.outline, a, 1);
+      this.stageLabel(k, Math.min(1, a * 1.6), false);
+    }
+  }
+  strong(k, alpha, glow) {
+    if (alpha <= 0.01) return;
+    const d = dims(this.b, k);
+    this.strokeW(0, 0, d.w, d.h, this.theme.rgb.outline, alpha, 2.5, 14 + glow);
+    this.stageLabel(k, alpha, true);
+  }
+  copyLabel(x, y, d, k, alpha) {
+    const s = this.cam.s, wp = d.w * s, hp = d.h * s;
+    if (alpha <= 0.01 || Math.min(wp, hp) < 26 || s >= CFG.NUM_MIN_PX) return;
+    const fs = Math.max(10, Math.min(22, Math.min(wp, hp) * 0.2));
+    const big = `${this.b}${sup(k)}`, val = fmt(Math.pow(this.b, k));
+    const cx = this.X(x + d.w / 2), cy = this.Y(y + d.h / 2);
+    this.ctx.font = `500 ${fs}px ${CVFONT}`;
+    const text = this.ctx.measureText(val).width + 12 < wp && k > 0 ? val : big;
+    this.textBox(text, cx, cy, fs, "rgba(255,255,255,0.95)", alpha, "center");
+  }
 
-      {/* Math annotation */}
-      <div style={{
-        position: "absolute", bottom: "6%", left: "50%", transform: "translateX(-50%)",
-        fontFamily: FONT, fontSize: Math.max(9, Math.min(13, panelPx * 0.026)),
-        color: (merging || splitting) ? theme.outline : `${theme.accent}77`,
-        fontWeight: (merging || splitting) ? 700 : 400, letterSpacing: "0.03em",
-        opacity: showMath ? 1 : 0, transition: "opacity 0.4s, color 0.3s",
-        pointerEvents: "none", whiteSpace: "nowrap",
-        textShadow: (merging || splitting) ? `0 0 10px ${theme.accent}` : "none",
-      }}>{mathStr}</div>
+  // ── frames ───────────────────────────────────────────────────
+  draw() {
+    const { ctx, W, H, dpr } = this;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalAlpha = 1; ctx.fillStyle = this.theme.bg; ctx.fillRect(0, 0, W, H);
+    this.drawDots();
+    this.labels = [];
+    const a = this.anim;
+    if (!a) this.drawSettled();
+    else if (a.dir > 0) this.drawUp(a);
+    else this.drawDown(a);
+    this.flushLabels();
+  }
 
-      {/* Idle total */}
-      <div style={{
-        position: "absolute", bottom: "7%", right: "8%",
-        fontFamily: FONT, fontSize: 13, color: theme.outline, fontWeight: 700,
-        letterSpacing: "-0.02em", textShadow: `0 0 10px ${theme.accent}`,
-        pointerEvents: "none",
-        opacity: phase === P.IDLE ? 1 : 0, transition: "opacity 0.4s 0.3s",
-      }}>{totalDisp.toLocaleString()}</div>
-    </div>
-  );
+  drawSettled() {
+    const n = this.n;
+    this.fillStage(n);
+    this.gridLines(0, 0, n);
+    this.cellNumbers(0, 0, n, 0, n);
+    this.drawHistory(n - 1);
+    this.strong(n, 1, 0);
+  }
+
+  // Copies are drawn *under* the original, so they appear to slide out
+  // from beneath it (up) and tuck back beneath it (down).
+  drawUp(a) {
+    const { b } = this, T = this.theme.rgb, m = a.from, k = a.to, [s0, s1] = CFG.UP_SPLIT;
+    const d = dims(b, m), gx = growsX(k), S = gx ? d.w : d.h, bm = Math.pow(b, m);
+    const pc = seg(a.p, 0, s0), pm = seg(a.p, s0, s1);
+    const q = EASE.inOut(pc), mg = EASE.inOut(pm), appear = smooth(0, 0.18, pc);
+    const col = mix(T.fresh, this.opts.layers ? this.theme.gen(k) : T.cell, mg);
+    for (let j = b - 1; j >= 1; j--) {
+      const off = j * S * q, x = gx ? off : 0, y = gx ? 0 : off;
+      this.fillW(x, y, d.w, d.h, col, appear);
+      if (pm === 0) { this.gridLines(x, y, m, appear); this.cellNumbers(x, y, m, j * bm, k, appear); }
+      this.strokeW(x, y, d.w, d.h, T.fresh, appear * (1 - mg), 1.5);
+      this.copyLabel(x, y, d, m, appear * (1 - mg));
+    }
+    this.fillStage(m);
+    if (pm === 0) { this.gridLines(0, 0, m); this.cellNumbers(0, 0, m, 0, k); }
+    else          { this.gridLines(0, 0, k); this.cellNumbers(0, 0, k, 0, k); }
+    this.copyLabel(0, 0, d, m, appear * (1 - mg));
+    this.drawHistory(m);
+    this.strong(m, 1 - mg, 0);
+    this.strong(k, mg, 22 * Math.sin(Math.PI * mg));
+  }
+
+  drawDown(a) {
+    const { b } = this, T = this.theme.rgb, m = a.to, k = a.from, [s0, s1] = CFG.DN_SPLIT;
+    const d = dims(b, m), gx = growsX(k), S = gx ? d.w : d.h, bm = Math.pow(b, m);
+    const pk = seg(a.p, 0, s0), pf = seg(a.p, s0, s1);
+    const mk = EASE.inOut(pk), q = 1 - EASE.inOut(pf), fade = 1 - smooth(0.65, 1, pf);
+    const col = mix(this.opts.layers ? this.theme.gen(k) : T.cell, T.gone, mk);
+    for (let j = b - 1; j >= 1; j--) {
+      const off = j * S * q, x = gx ? off : 0, y = gx ? 0 : off;
+      this.fillW(x, y, d.w, d.h, col, fade);
+      if (pf > 0) { this.gridLines(x, y, m, fade); this.cellNumbers(x, y, m, j * bm, k, fade); }
+      this.strokeW(x, y, d.w, d.h, T.outline, mk * fade * 0.6, 1.2);
+      this.copyLabel(x, y, d, m, mk * fade * 0.8);
+    }
+    this.fillStage(m);
+    if (pf === 0) { this.gridLines(0, 0, k); this.cellNumbers(0, 0, k, 0, k); }
+    else          { this.gridLines(0, 0, m); this.cellNumbers(0, 0, m, 0, m); }
+    this.copyLabel(0, 0, d, m, mk * (1 - pf));
+    this.drawHistory(m);
+    this.strong(k, 1 - mk, 0);
+    this.strong(m, mk, 18 * Math.sin(Math.PI * mk));
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 9  GRID DISPATCHER
+//  § 5  MATH ROW
 // ═══════════════════════════════════════════════════════════════
-function Grid(props) {
-  return Math.pow(props.base, props.bigExp) > CFG.RECT_THRESHOLD
-    ? <RectGrid {...props} />
-    : <ExponentGrid {...props} />;
+function stepText(b, st) {
+  const { phase, from, to } = st;
+  const sm = Math.pow(b, Math.min(from, to)), sb = Math.pow(b, Math.max(from, to));
+  const sum = () => b <= 4 && fmt(sm).length <= 9
+    ? Array.from({ length: b }, () => fmt(sm)).join(" + ")
+    : `${b} copies of ${fmt(sm)}`;
+  switch (phase) {
+    case "copy":   return sum();
+    case "merge":
+    case "settle": return from < to ? `${b} × ${fmt(sm)} = ${fmt(sb)}` : `${fmt(sb)} ÷ ${b} = ${fmt(sm)}`;
+    case "mark":   return `${fmt(sb)} = ${sum()}`;
+    case "fold":   return `${fmt(sb)} ÷ ${b} = ${fmt(sm)}`;
+    default:       return "";
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  § 10  MATH ROW
-// ═══════════════════════════════════════════════════════════════
-function MathRow({ base, liveExp, bigExp, smallExp, phase, theme }) {
-  const now      = Math.pow(base, liveExp);
-  const totalBig = Math.pow(base, bigExp);
-  const totalSml = Math.pow(base, smallExp);
-  const isDown   = DN_PHASES.includes(phase);
-  const showSub  = [P.UP_STRIP, P.UP_EXPAND, P.DN_COLOR, P.DN_FOCUS].includes(phase);
-  const merge    = phase === P.UP_EXPAND;
-  const split    = phase === P.DN_FOCUS;
-
-  const sub = isDown
-    ? (split ? `${totalBig.toLocaleString()} ÷ ${base} = ${totalSml.toLocaleString()}`
-        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "))
-    : (merge ? `${base} × ${totalSml.toLocaleString()} = ${totalBig.toLocaleString()}`
-        : Array.from({ length: base }, () => totalSml.toLocaleString()).join(" + "));
-
+function MathRow({ base, st, theme }) {
+  const e   = st.replay ?? st.live;
+  const now = Math.pow(base, e);
+  const sub = st.replay != null ? "replaying growth…" : stepText(base, st);
+  const hot = ["merge", "fold"].includes(st.phase);
+  const nm  = named(now);
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{
-        fontSize: "clamp(22px,4.2vw,38px)", fontFamily: DISP,
-        color: "#f8fafc", textShadow: `0 0 22px ${theme.accent}55`,
-        userSelect: "none", lineHeight: 1.1,
+        fontSize: "clamp(22px,4.2vw,38px)", fontFamily: DISP, color: "#f8fafc",
+        textShadow: `0 0 22px ${theme.a("accent", 0.35)}`, userSelect: "none", lineHeight: 1.1,
       }}>
         <span style={{ color: theme.accent }}>{base}</span>
-        <sup style={{ fontSize: "0.52em", verticalAlign: "super", color: theme.outline }}>{liveExp}</sup>
-        <span style={{ color: "#1e2d3d", fontSize: "0.5em", margin: "0 7px" }}>=</span>
-        <span style={{ color: "#f1f5f9", fontSize: "0.56em" }}>{now.toLocaleString()}</span>
+        <sup style={{ fontSize: "0.52em", verticalAlign: "super", color: theme.outline }}>{e}</sup>
+        <span style={{ color: "#4b5d73", fontSize: "0.5em", margin: "0 8px" }}>=</span>
+        <span style={{ color: "#f1f5f9", fontSize: "0.56em" }}>{fmt(now)}</span>
       </div>
-      {/* Fixed-height sub-line — never causes layout shift */}
+      <div style={{ height: 18, fontFamily: FONT, fontSize: 11, color: "#5b6b80", marginTop: 3 }}>
+        {nm && <>≈ {nm} · {sci(now)}</>}
+      </div>
       <div style={{
-        fontFamily: FONT, fontSize: 12, letterSpacing: "0.04em",
-        color: (merge || split) ? theme.outline : `${theme.accent}77`,
-        fontWeight: (merge || split) ? 600 : 400,
-        height: 20, marginTop: 4,
+        fontFamily: FONT, fontSize: 12, letterSpacing: "0.04em", height: 20, marginTop: 2,
+        color: hot ? theme.outline : theme.a("accent", 0.6), fontWeight: hot ? 600 : 400,
         display: "flex", alignItems: "center", justifyContent: "center",
-        opacity: showSub ? 1 : 0, transition: "opacity 0.35s, color 0.3s",
-      }}>{sub}</div>
+        opacity: sub ? 1 : 0, transition: "opacity 0.3s, color 0.3s", whiteSpace: "nowrap",
+      }}>{sub || "·"}</div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 11  NAV BUTTON
+//  § 6  SMALL UI PIECES
 // ═══════════════════════════════════════════════════════════════
-function NavBtn({ label, onClick, disabled, theme }) {
-  const sz = CFG.NAV_SIZE;
+function NavBtn({ label, onClick, disabled, theme, title }) {
   return (
-    <button onClick={onClick} disabled={disabled} className="nav-btn" style={{
-      width: sz, height: sz, borderRadius: "50%", flexShrink: 0,
+    <button onClick={onClick} disabled={disabled} className="nav-btn" title={title} style={{
+      width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
       background: disabled ? "#0d1625" : theme.cell,
       border: `2px solid ${disabled ? "#1e2a3a" : theme.outline}`,
-      color: disabled ? "#1e2a3a" : "#fff", fontSize: 24,
+      color: disabled ? "#2a3a4e" : "#fff", fontSize: 22, lineHeight: 1,
       cursor: disabled ? "not-allowed" : "pointer",
       display: "flex", alignItems: "center", justifyContent: "center",
-      opacity: disabled ? 0.2 : 1,
-      boxShadow: disabled ? "none" : `0 0 16px ${theme.accent}44`,
+      opacity: disabled ? 0.35 : 1,
+      boxShadow: disabled ? "none" : `0 0 16px ${theme.a("accent", 0.3)}`,
       transition: "all 0.15s",
     }}>{label}</button>
   );
 }
 
+function Toggle({ on, onClick, label, theme }) {
+  return (
+    <button className="menu-item" onClick={onClick} style={{ color: "#cbd5e1" }}>
+      <span style={{
+        width: 28, height: 16, borderRadius: 8, position: "relative", flexShrink: 0,
+        background: on ? theme.cell : "#1e293b", transition: "background .2s",
+      }}>
+        <span style={{
+          position: "absolute", top: 2, left: on ? 14 : 2, width: 12, height: 12, borderRadius: "50%",
+          background: "#fff", transition: "left .2s",
+        }} />
+      </span>
+      {label}
+    </button>
+  );
+}
+
+function SettingsMenu({ theme, opts, setOpts, speed, setSpeed, onClose }) {
+  const head = { fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73", padding: "8px 10px 4px" };
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+      <div style={{
+        position: "absolute", top: 42, right: 0, zIndex: 50, width: 264,
+        background: "#0e1828", border: `1px solid ${theme.a("accent", 0.25)}`, borderRadius: 12,
+        padding: 6, boxShadow: "0 12px 40px rgba(0,0,0,.6)",
+      }}>
+        <div style={head}>Explore bigger</div>
+        <a className="menu-item" href="uparrow.html" style={{ color: theme.outline }}>
+          <span style={{ width: 28, textAlign: "center", fontSize: 15 }}>⇈</span>
+          <span>Knuth up-arrows<br /><span style={{ fontSize: 10, color: "#64748b" }}>towers like 3↑↑5</span></span>
+        </a>
+        <div className="menu-item off" style={{ color: "#94a3b8" }}>
+          <span style={{ width: 28, textAlign: "center", fontSize: 15 }}>⟶</span>
+          <span>Big-number line<br /><span style={{ fontSize: 10, color: "#64748b" }}>coming soon · see TODO.md</span></span>
+        </div>
+        <div style={head}>Display</div>
+        <Toggle theme={theme} on={opts.layers}  label="Colour by generation" onClick={() => setOpts(o => ({ ...o, layers: !o.layers }))} />
+        <Toggle theme={theme} on={opts.history} label="Earlier-stage outlines" onClick={() => setOpts(o => ({ ...o, history: !o.history }))} />
+        <Toggle theme={theme} on={opts.numbers} label="Cell numbers when zoomed in" onClick={() => setOpts(o => ({ ...o, numbers: !o.numbers }))} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", fontSize: 12, color: "#cbd5e1" }}>
+          <span style={{ flex: 1 }}>Speed</span>
+          {[0.5, 1, 2].map(s => (
+            <button key={s} className="bt" onClick={() => setSpeed(s)} style={{
+              fontFamily: FONT, fontSize: 11, padding: "3px 8px", borderRadius: 6,
+              background: speed === s ? theme.cell : "#1e293b", color: speed === s ? "#fff" : "#94a3b8",
+            }}>{s === 0.5 ? "½" : s}×</button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  § 12  APP
+//  § 7  APP
 // ═══════════════════════════════════════════════════════════════
-const supCh = n => "⁰¹²³⁴⁵⁶⁷⁸⁹"[n] ?? String(n);
-const TT = {
-  exponent: { title: "Exponent",      body: "The exponent tells you how many times to multiply the base. Each step multiplies the total by the base." },
-  base:     { title: "Base",          body: "The base is the number being multiplied. A larger base grows wider strips each fold." },
-  fold:     { title: "Folding paper", body: "Each multiplication folds the rectangle — alternating width then height. A4→A3→A2→A1 follows base 2." },
-  total:    { title: "Total cells",   body: "The total equals bⁿ. Each step multiplies — this explosive growth is the essence of exponential functions." },
-  divide:   { title: "Dividing down", body: "Going down divides by the base. The top-left strip survives; the rest fade and the view zooms back to center." },
+const CAPTION = {
+  idle:   "Every earlier stage is still in there. Zoom into the bright seed cell in the top-left corner to travel back in time.",
+  copy:   "Make copies: the block unfolds into b identical strips, side by side.",
+  merge:  "Solidify: the copies fuse into one new block, b times bigger.",
+  settle: "The new block becomes the starting point for the next step.",
+  mark:   "Split: the block is really b copies of the previous stage.",
+  fold:   "Fold away: the extra copies tuck back under the first one.",
+  replay: "Replaying: starting from the single seed cell, every step multiplies by the base.",
 };
 
-function App() {
-  const [base, setBase]       = useState(CFG.BASE_INIT);
-  const [exp,  setExp]        = useState(CFG.EXP_INIT);
-  const [tip,  setTip]        = useState(null);
-  const [panelPx, setPanelPx] = useState(CFG.PANEL_DEFAULT);
-  const panelRef = useRef(null);
+function readParams() {
+  const q = new URLSearchParams(location.search);
+  let b = parseInt(q.get("base"), 10), n = parseInt(q.get("exp"), 10);
+  if (!(b >= CFG.BASE_MIN && b <= CFG.BASE_MAX)) b = CFG.BASE_INIT;
+  if (!(n >= 0)) n = CFG.EXP_INIT;
+  return { b, n: Math.min(n, expMax(b)) };
+}
 
-  const { phase, dispExp, bigExp, smallExp, liveExp, liveRef, fast, go, reset } =
-    useSequencer(CFG.EXP_INIT);
+function App() {
+  const [init] = useState(readParams);
+  const [base, setBase]     = useState(init.b);
+  const [target, setTarget] = useState(init.n);
+  const [st, setSt] = useState({ phase: "idle", live: init.n, from: init.n, to: init.n, n: init.n, follow: true, replay: null });
+  const [opts, setOpts]   = useState({ layers: false, numbers: true, history: true });
+  const [speed, setSpeed] = useState(1);
+  const [menu, setMenu]   = useState(false);
+  const cvRef = useRef(null), wrapRef = useRef(null), eng = useRef(null);
+  const ctl = useRef({});
 
   const theme  = makeTheme(base);
-  const maxExp = CFG.EXP_MAX[base] ?? 4;
-  const isDN   = DN_PHASES.includes(phase);
-  const currDim = getDim(base, liveExp);
-  const opLabel = phase !== P.IDLE ? (isDN ? `÷${base}` : `×${base}`) : "";
+  const maxExp = expMax(base);
+  const dimNow = dims(base, st.replay ?? st.live);
 
   useEffect(() => {
-    const obs = new ResizeObserver(entries => {
-      const r = entries[0].contentRect;
-      setPanelPx(Math.min(r.width, r.height));
-    });
-    if (panelRef.current) obs.observe(panelRef.current);
-    return () => obs.disconnect();
+    const e = new Field(cvRef.current, setSt);
+    eng.current = e;
+    e.setBase(init.b, init.n);
+    const ro = new ResizeObserver(([en]) => e.resize(en.contentRect.width, en.contentRect.height));
+    ro.observe(wrapRef.current);
+    if (document.fonts) document.fonts.ready.then(() => { e.dirty = true; });
+    return () => { ro.disconnect(); e.destroy(); };
   }, []);
+  useEffect(() => { eng.current && eng.current.setOpts(opts); }, [opts]);
+  useEffect(() => { eng.current && eng.current.setSpeed(speed); }, [speed]);
+  useEffect(() => {
+    if (st.phase !== "idle") return;
+    try { history.replaceState(null, "", `?base=${base}&exp=${st.n}`); } catch (_) { /* file:// */ }
+  }, [st.phase, st.n, base]);
 
   function changeExp(n) {
-    if (n < 0 || n > maxExp) return;
-    setExp(n);
-    go(liveRef.current, n);
+    n = Math.max(0, Math.min(maxExp, n));
+    setTarget(n); eng.current.setTarget(n);
   }
   function changeBase(b) {
-    const mx     = CFG.EXP_MAX[b] ?? 4;
-    const newExp = Math.min(exp, mx);
-    setBase(b); setExp(newExp); reset(newExp);
+    const n = Math.min(target, expMax(b));
+    setBase(b); setTarget(n); eng.current.setBase(b, n);
   }
+  ctl.current = { changeExp, target };
 
-  const activeTip = isDN ? "divide" : tip;
+  useEffect(() => {
+    const onKey = e => {
+      if (e.target.tagName === "INPUT" && e.target.type !== "range") return;
+      const { changeExp, target } = ctl.current, E = eng.current;
+      if (["ArrowRight", "ArrowUp", "+", "="].includes(e.key)) { e.preventDefault(); changeExp(target + 1); }
+      else if (["ArrowLeft", "ArrowDown", "-", "_"].includes(e.key)) { e.preventDefault(); changeExp(target - 1); }
+      else if (e.key === "f" || e.key === "F") E.recenter();
+      else if (e.key === "r" || e.key === "R") E.replay();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const busy    = st.phase !== "idle";
+  const opLabel = busy ? (st.to > st.from ? `×${base}` : `÷${base}`) : "";
+  const caption = st.replay != null ? CAPTION.replay : (CAPTION[st.phase] || CAPTION.idle).replace(/\bb\b/g, String(base));
+  const toolStyle = { color: theme.outline, border: `1px solid ${theme.a("accent", 0.3)}` };
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#0a1020",
-      color: "#e2e8f0", fontFamily: FONT,
-      display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "20px 16px 32px",
+      minHeight: "100vh", background: "#0a1020", color: "#e2e8f0", fontFamily: FONT,
+      display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 16px 28px",
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display&display=swap');
-        @keyframes foldInX {
-          from { opacity:0; transform:perspective(500px) rotateY(-85deg) scaleX(0.05); }
-          to   { opacity:1; transform:perspective(500px) rotateY(0deg)   scaleX(1);    }
-        }
-        @keyframes foldInY {
-          from { opacity:0; transform:perspective(500px) rotateX(-85deg) scaleY(0.05); }
-          to   { opacity:1; transform:perspective(500px) rotateX(0deg)   scaleY(1);    }
-        }
-        @keyframes zoomOutBands {
-          from { transform: scaleX(var(--ssx)) scaleY(var(--ssy)); }
-          to   { transform: scaleX(1) scaleY(1); }
-        }
-        .nav-btn:hover:not(:disabled) { filter:brightness(1.3); transform:scale(1.08); }
-        .nav-btn:active:not(:disabled){ transform:scale(0.92); }
-        .bt { cursor:pointer; border:none; transition:all .18s; }
-        .bt:hover { filter:brightness(1.2); }
-        .ed { cursor:pointer; border:none; transition:width .14s,height .14s,background .14s,border .14s; }
-        .ed:hover { filter:brightness(1.5); }
-        .ch { cursor:pointer; border:none; transition:all .14s; }
-        .ch:hover { filter:brightness(1.3); transform:translateY(-1px); }
-      `}</style>
-
-      {/* Header — fixed height */}
-      <div style={{
-        textAlign: "center", height: 52,
-        display: "flex", flexDirection: "column", justifyContent: "center",
-        marginBottom: 10,
-      }}>
-        <div style={{
-          fontFamily: DISP, fontSize: "clamp(18px,3.6vw,28px)",
-          color: theme.outline, transition: "color 0.4s",
-          textShadow: `0 0 20px ${theme.accent}44`, letterSpacing: "0.01em",
-        }}>Exponential Powers</div>
-        <div style={{ fontSize: 9, color: "#1e2d3d", marginTop: 3, letterSpacing: "0.09em", textTransform: "uppercase" }}>
-          visualizing b<sup>n</sup> as a folding rectangle
+      {/* Header */}
+      <div style={{ width: "min(880px,100%)", display: "flex", alignItems: "center", marginBottom: 10, position: "relative" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: theme.outline, transition: "color 0.4s",
+            textShadow: `0 0 20px ${theme.a("accent", 0.3)}`,
+          }}>Exponential Powers</div>
+          <div style={{ fontSize: 9, color: "#4b5d73", marginTop: 2, letterSpacing: "0.09em", textTransform: "uppercase" }}>
+            b<sup>n</sup> as a field that keeps folding outward
+          </div>
         </div>
+        <a href="uparrow.html" className="tool" title="Knuth up-arrow notation" style={{ ...toolStyle, textDecoration: "none", marginRight: 8 }}>⇈ up-arrows</a>
+        <button className="tool" onClick={() => setMenu(m => !m)} title="Settings" style={{ ...toolStyle, fontSize: 15, padding: "0 9px", position: "relative", zIndex: 60 }}>⚙</button>
+        {menu && <SettingsMenu theme={theme} opts={opts} setOpts={setOpts} speed={speed} setSpeed={setSpeed} onClose={() => setMenu(false)} />}
       </div>
 
-      {/* Base tabs — fixed height */}
+      {/* Base tabs */}
       <div style={{
-        height: 36, display: "flex", alignItems: "center", gap: 3,
-        background: "#131e2e", padding: "0 5px", borderRadius: 10,
-        marginBottom: 10,
+        maxWidth: "100%", overflowX: "auto", display: "flex", alignItems: "center", gap: 3,
+        background: "#131e2e", padding: 4, borderRadius: 10, marginBottom: 10,
       }}>
         {Array.from({ length: CFG.BASE_MAX - CFG.BASE_MIN + 1 }, (_, i) => i + CFG.BASE_MIN).map(b => {
           const t = makeTheme(b);
           return (
             <button key={b} className="bt" onClick={() => changeBase(b)} style={{
-              fontFamily: FONT, fontSize: 11, fontWeight: 500,
+              fontFamily: FONT, fontSize: 11, fontWeight: 500, whiteSpace: "nowrap",
               padding: "4px 9px", borderRadius: 7, height: 28,
               background: base === b ? t.cell : "transparent",
-              color: base === b ? "#fff" : "#374151",
-              boxShadow: base === b ? `0 0 11px ${t.accent}44` : "none",
+              color: base === b ? "#fff" : "#64748b",
+              boxShadow: base === b ? `0 0 11px ${t.a("accent", 0.3)}` : "none",
             }}>base {b}</button>
           );
         })}
       </div>
 
-      {/* Exponent dots — FIXED height; dots resize inside it */}
-      <div style={{
-        height: 40, display: "flex", alignItems: "center", gap: 5,
-        background: "#131e2e", padding: "0 14px", borderRadius: 12,
-        boxShadow: `0 0 16px ${theme.accent}11`, marginBottom: 12,
+      {/* Field */}
+      <div ref={wrapRef} style={{
+        width: "min(880px,100%)", height: "clamp(300px,58vh,620px)", position: "relative",
+        background: theme.bg, borderRadius: 18, overflow: "hidden",
+        border: `1.5px solid ${theme.a("accent", 0.12)}`,
+        boxShadow: `0 0 32px ${theme.a("accent", 0.07)}, inset 0 0 24px #00000066`,
       }}>
-        {Array.from({ length: maxExp + 1 }, (_, i) => (
-          <button key={i} className="ed" onClick={() => changeExp(i)} style={{
-            width:  i === liveExp ? 22 : 10,
-            height: i === liveExp ? 22 : 10,
-            borderRadius: "50%",
-            background: i === liveExp ? theme.cell : i < liveExp ? `${theme.cell}44` : "#1a2535",
-            border: i === liveExp ? `2px solid ${theme.outline}` : "1px solid #1e2d3d",
-            boxShadow: i === liveExp ? `0 0 6px ${theme.accent}` : "none",
-            color: "#fff", fontFamily: FONT, fontSize: 8, fontWeight: 700,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", flexShrink: 0,
-          }}>{i === liveExp ? i : ""}</button>
-        ))}
-      </div>
+        <canvas ref={cvRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none", cursor: "grab" }} />
 
-      {/* Grid panel + nav buttons */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <NavBtn label="−" onClick={() => changeExp(exp - 1)} disabled={exp === 0} theme={theme} />
-
-        <div ref={panelRef} style={{
-          width:  "min(460px, calc(100vw - 160px))",
-          height: "min(460px, calc(100vw - 160px))",
-          background: theme.bg,
-          border: `1.5px solid ${theme.accent}1a`,
-          borderRadius: 18, position: "relative", overflow: "hidden", flexShrink: 0,
-          boxShadow: `0 0 32px ${theme.accent}11, inset 0 0 24px #00000066`,
-          transition: "background 0.4s, border-color 0.4s",
-        }}
-          onMouseEnter={() => setTip("total")}
-          onMouseLeave={() => setTip(null)}
-        >
-          <BgZoom base={base} liveExp={liveExp} theme={theme} />
-
-          {/* Dim label */}
-          <div style={{
-            position: "absolute", top: 10, left: 12,
-            fontFamily: FONT, fontSize: 9, color: theme.accent,
-            opacity: 0.35, letterSpacing: "0.07em", pointerEvents: "none",
-          }}>{currDim.w} × {currDim.h}</div>
-
-          {/* Op label — always rendered, opacity-toggled */}
-          <div style={{
-            position: "absolute", top: 10, right: 12,
-            fontFamily: FONT, fontSize: 9, color: theme.accent, pointerEvents: "none",
-            opacity: opLabel ? 0.45 : 0, transition: "opacity 0.2s",
-          }}>{opLabel || "·"}</div>
-
-          <Grid base={base} dispExp={dispExp} bigExp={bigExp} smallExp={smallExp}
-                phase={phase} fast={fast} theme={theme} panelPx={panelPx} />
+        <div style={{ position: "absolute", top: 10, left: 12, fontSize: 10, color: theme.accent, opacity: 0.55, letterSpacing: "0.07em", pointerEvents: "none" }}>
+          {fmt(dimNow.w)} × {fmt(dimNow.h)}
+        </div>
+        <div style={{ position: "absolute", top: 10, right: 12, fontSize: 12, fontWeight: 600, color: theme.outline, pointerEvents: "none", opacity: opLabel ? 0.8 : 0, transition: "opacity 0.2s" }}>
+          {opLabel || "·"}
         </div>
 
-        <NavBtn label="+" onClick={() => changeExp(exp + 1)} disabled={exp === maxExp} theme={theme} />
-      </div>
-
-      {/* Math row — fixed height */}
-      <div style={{ height: 72, display: "flex", flexDirection: "column", justifyContent: "center" }}
-        onMouseEnter={() => setTip("base")} onMouseLeave={() => setTip(null)}
-      >
-        <MathRow base={base} liveExp={liveExp} bigExp={bigExp} smallExp={smallExp}
-                 phase={phase} theme={theme} />
-      </div>
-
-      {/* Fold hint — fixed height, opacity toggle */}
-      <div style={{
-        height: 20, display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 10, letterSpacing: "0.07em", marginBottom: 10,
-        opacity: liveExp > 0 && phase === P.IDLE ? 1 : 0,
-        transition: "opacity 0.3s",
-      }}
-        onMouseEnter={() => setTip("fold")} onMouseLeave={() => setTip(null)}
-      >
-        <span style={{ color: `${theme.accent}55` }}>
-          {liveExp % 2 === 1 ? "↔ width fold" : "↕ height fold"} · hover for info
-        </span>
-      </div>
-
-      {/* Tooltip — fixed height */}
-      <div style={{
-        width: "min(440px,90vw)", height: 64,
-        background: "#0e1828", borderRadius: 10, padding: "10px 16px",
-        border: `1px solid ${activeTip ? theme.accent + "33" : "transparent"}`,
-        opacity: activeTip ? 1 : 0.2,
-        transition: "opacity 0.3s, border-color 0.3s",
-        marginBottom: 14, boxSizing: "border-box",
-        display: "flex", flexDirection: "column", justifyContent: "center",
-      }}>
-        {activeTip ? (
-          <>
-            <div style={{ fontFamily: DISP, fontSize: 12, color: theme.outline, marginBottom: 3 }}>{TT[activeTip].title}</div>
-            <div style={{ fontSize: 10, color: "#607080", lineHeight: 1.5 }}>{TT[activeTip].body}</div>
-          </>
-        ) : (
-          <div style={{ fontSize: 10, color: "#1a2535", textAlign: "center" }}>hover elements to learn more</div>
+        {!st.follow && st.replay == null && (
+          <button className="tool" onClick={() => eng.current.recenter()} style={{
+            ...toolStyle, position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
+          }}>⌖ re-center</button>
         )}
+
+        <div style={{ position: "absolute", left: 10, bottom: 10, display: "flex", gap: 6 }}>
+          <button className="tool" style={toolStyle} title="Zoom in"  onClick={() => eng.current.zoomBy(1.6)}>＋</button>
+          <button className="tool" style={toolStyle} title="Zoom out" onClick={() => eng.current.zoomBy(1 / 1.6)}>－</button>
+          <button className="tool" style={toolStyle} title="Fit (F)" onClick={() => eng.current.recenter()}>⤢ fit</button>
+          <button className="tool" style={{ ...toolStyle, opacity: busy || st.n === 0 ? 0.4 : 1 }} title="Replay growth from the seed (R)"
+                  onClick={() => eng.current.replay()}>▶ replay growth</button>
+        </div>
       </div>
 
-      {/* Power chips */}
-      <div style={{ width: "min(480px,92vw)", display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", marginBottom: 12 }}>
-        {Array.from({ length: maxExp + 1 }, (_, i) => {
-          const v = Math.pow(base, i);
-          return (
-            <button key={i} className="ch"
-              onClick={() => changeExp(i)}
-              onMouseEnter={() => setTip("exponent")}
-              onMouseLeave={() => setTip(null)}
-              style={{
-                fontFamily: FONT, fontSize: 10, padding: "3px 8px", borderRadius: 5,
-                background: i === liveExp ? `${theme.cell}99` : "#0e1828",
-                border: `1px solid ${i === liveExp ? theme.outline : "#1a2535"}`,
-                color: i === liveExp ? "#fff" : "#2d3d52",
-                boxShadow: i === liveExp ? `0 0 6px ${theme.accent}33` : "none",
-                cursor: "pointer", letterSpacing: "0.04em",
-              }}>
-              {base}{supCh(i)} = {v >= 100000 ? v.toExponential(1) : v.toLocaleString()}
-            </button>
-          );
-        })}
+      {/* Exponent control */}
+      <div style={{ width: "min(560px,100%)", display: "flex", alignItems: "center", gap: 12, margin: "14px 0 6px" }}>
+        <NavBtn label="−" title="Divide by the base" onClick={() => changeExp(target - 1)} disabled={target === 0} theme={theme} />
+        <div style={{ flex: 1 }}>
+          <input type="range" className="exp" min={0} max={maxExp} value={target}
+            onChange={e => changeExp(+e.target.value)}
+            style={{
+              width: "100%", "--thumb": theme.cell, "--thumb-edge": theme.outline,
+              background: `linear-gradient(90deg, ${theme.cell} ${(target / maxExp) * 100}%, #1a2535 ${(target / maxExp) * 100}%)`,
+            }} />
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#4b5d73", marginTop: 4 }}>
+            <span>{base}⁰ = 1</span>
+            <span style={{ color: theme.outline }}>exponent {target}</span>
+            <span>{base}{sup(maxExp)}</span>
+          </div>
+        </div>
+        <NavBtn label="+" title="Multiply by the base" onClick={() => changeExp(target + 1)} disabled={target === maxExp} theme={theme} />
       </div>
 
-      <div style={{ fontSize: 9, color: "#111d2a", letterSpacing: "0.08em" }}>
-        click a value · use ± · watch the fold
+      {/* Math */}
+      <div style={{ minHeight: 92, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <MathRow base={base} st={st} theme={theme} />
+      </div>
+
+      {/* Caption */}
+      <div style={{
+        width: "min(560px,100%)", minHeight: 50, background: "#0e1828", borderRadius: 10, padding: "10px 16px",
+        border: `1px solid ${theme.a("accent", 0.18)}`, fontSize: 11, color: "#8193a8", lineHeight: 1.55, textAlign: "center",
+      }}>{caption}</div>
+
+      <div style={{ fontSize: 9, color: "#334155", letterSpacing: "0.08em", marginTop: 12 }}>
+        scroll / pinch to zoom · drag to pan · ← → to step · F to fit · R to replay
       </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 13  MOUNT
+//  § 8  MOUNT
 // ═══════════════════════════════════════════════════════════════
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+</script>
 </body>
 </html>
