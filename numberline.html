@@ -53,7 +53,7 @@ const T = {
 // ═══════════════════════════════════════════════════════════════
 const CH = [
   { name: "Counting",           short: "Counting", blurb: "Numbers you can count to. Each step is a few times bigger than the last." },
-  { name: "Names",              short: "Names",    blurb: "Every ×1,000 earns a new name, until there is nothing left to count." },
+  { name: "Names",              short: "Names",    blurb: "Every ×1,000 earns a new name. This is where numbers meet the real world: seconds, stars, atoms." },
   { name: "Powers of powers",   short: "Powers",   blurb: "The exponent itself becomes enormous. You can describe these, but never write them out." },
   { name: "Towers",             short: "Towers",   blurb: "Exponents of exponents: every step adds one more “10 to the power of”." },
   { name: "Up-arrows",          short: "Arrows",   blurb: "Towers of towers. Each extra arrow repeats the operation before it." },
@@ -64,35 +64,42 @@ const E = (c, n, v, j, t, x = {}) => ({ c, n, v, j, t, ...x });
 
 const ENTRIES = [
   // 0 · Counting
-  E(0, "One", "1", "", "Where every number starts. Everything on this page is made from it by adding, multiplying or raising to powers."),
-  E(0, "Ten", "10", "×10", "The base of our number system: ten fingers, ten digits."),
-  E(0, "Hundred", "100", "×10", "Ten tens, or 10^{2}. You can still hold this in your head.", { l: ["index.html?base=10&exp=2", "see 10² as a field of cells"] }),
-  E(0, "Thousand", "1,000", "×10", "The wiki also lists it as Killion. From here, the short scale gives a new name to every ×1,000.", { l: ["index.html?base=10&exp=3", "see 10³ as a field of cells"] }),
-  E(0, "Myriad", "10,000", "×10", "The Greek word for ten thousand. East Asian languages still count in units of it."),
-  E(0, "Lakh", "100,000", "×10", "The Indian numbering system has a word for this. Ten million is a crore."),
-  E(0, "Million", "1,000,000", "×10", "A thousand thousands. The wiki’s second class starts here.", { l: ["index.html?base=10&exp=6", "see 10⁶ as a field of cells"] }),
-  E(0, "Crore", "10,000,000", "×10", "Ten million, in the Indian system. The wiki also calls it Pipsqueak."),
-  // 1 · Names
-  E(1, "Billion", "10^{9}", "×100", "In the short scale, which most English speakers use. The older long scale used billion for 10¹².", { a: "1,000,000,000", l: ["index.html?base=10&exp=9", "see 10⁹ as a field of cells"] }),
-  E(1, "Trillion", "10^{12}", "×1,000", "A trillion seconds is about 31,700 years.", { a: "1,000,000,000,000" }),
-  E(1, "Quadrillion", "10^{15}", "×1,000", "A quadrillion seconds is about 31.7 million years.", { l: ["index.html?base=10&exp=15", "see 10¹⁵ as a field of cells"] }),
-  E(1, "Quintillion", "10^{18}", "×1,000", "Estimates of the grains of sand on Earth’s beaches are in this range."),
-  E(1, "Avogadro’s number", "6.022 × 10^{23}", "about ×600,000", "How many particles make a mole: the atoms in 12 grams of carbon-12. A number chemists really use."),
-  E(1, "Decillion", "10^{33}", "about ×1.7 billion", "The short-scale names keep climbing one per thousand: undecillion, duodecillion, and so on."),
-  E(1, "Eddington’s number", "1.57 × 10^{79}", "about ×10⁴⁶", "Arthur Eddington’s estimate of the protons in the observable universe: 136 × 2²⁵⁶."),
-  E(1, "Googol", "10^{100}", "about ×6 × 10²⁰", "A 1 followed by 100 zeros. Coined in 1938 by nine-year-old Milton Sirotta; his uncle, the mathematician Edward Kasner, popularised it."),
-  E(1, "Planck volumes in the universe", "4.6 × 10^{185}", "about ×4.6 × 10⁸⁵", "Roughly how many Planck volumes, the smallest volume that means anything in physics, fit in the observable universe."),
-  E(1, "Centillion", "10^{303}", "about ×2 × 10¹¹⁷", "The short-scale name for 10³⁰³."),
+  E(0, "One", "1", "", "Where every number starts. Everything on this page is made from it by adding, multiplying or raising to powers.", { s: "One person, one breath, one step." }),
+  E(0, "Ten", "10", "×10", "The base of our number system: ten fingers, ten digits.", { s: "Ten fingers on two hands." }),
+  E(0, "Hundred", "100", "×10", "Ten tens, or 10^{2}. You can still hold this in your head.", { s: "A century is a hundred years.", l: ["index.html?base=10&exp=2", "see 10² as a field of cells"] }),
+  E(0, "Thousand", "1,000", "×10", "The wiki also lists it as Killion. From here, the short scale gives a new name to every ×1,000.", { s: "A thousand steps is about a ten-minute walk.", l: ["index.html?base=10&exp=3", "see 10³ as a field of cells"] }),
+  E(0, "Myriad", "10,000", "×10", "The Greek word for ten thousand. East Asian languages still count in units of it.", { s: "The popular 10,000-steps-a-day goal is about 8 kilometres of walking." }),
+  E(0, "Lakh", "100,000", "×10", "The Indian numbering system has a word for this. Ten million is a crore.", { s: "A person has roughly 100,000 hairs on their head." }),
+  E(0, "Million", "1,000,000", "×10", "A thousand thousands. The wiki’s second class starts here.", { s: "A million seconds is about 11.6 days.", l: ["index.html?base=10&exp=6", "see 10⁶ as a field of cells"] }),
+  E(0, "Crore", "10,000,000", "×10", "Ten million, in the Indian system. The wiki also calls it Pipsqueak.", { s: "Ten million seconds is about 116 days, nearly four months." }),
+  E(0, "Hundred million", "100,000,000", "×10", "The wiki calls it Myllion. Nine digits are still all you need.", { s: "A hundred million seconds is about 3.2 years." }),
+  // 1 · Names: the short scale, one name per ×1,000
+  E(1, "Billion", "10^{9}", "×10", "In the short scale, which most English speakers use. The older long scale used billion for 10¹².", { a: "1,000,000,000", s: "A billion seconds is about 31.7 years. The Earth has about 8 billion people.", l: ["index.html?base=10&exp=9", "see 10⁹ as a field of cells"] }),
+  E(1, "Trillion", "10^{12}", "×1,000", "A thousand billions.", { a: "1,000,000,000,000", s: "A trillion seconds is about 31,700 years, back to the age of the oldest cave art. Light travels about 9.5 trillion kilometres in a year." }),
+  E(1, "Quadrillion", "10^{15}", "×1,000", "A thousand trillions.", { s: "A quadrillion seconds is about 31.7 million years. Ants on Earth are estimated at around 20 quadrillion.", l: ["index.html?base=10&exp=15", "see 10¹⁵ as a field of cells"] }),
+  E(1, "Quintillion", "10^{18}", "×1,000", "A quintillion seconds is about 31.7 billion years: more than twice the age of the universe.", { s: "The Milky Way is about a quintillion kilometres across, roughly 100,000 light-years." }),
+  E(1, "Sextillion", "10^{21}", "×1,000", "The names are Latin: sex- means six, and each -illion is another thousand.", { s: "The Earth weighs about 6 sextillion tonnes." }),
+  E(1, "Avogadro’s number", "6.022 × 10^{23}", "about ×600", "How many particles make a mole: the atoms in 12 grams of carbon-12. A number chemists really use.", { s: "A teaspoon of water holds roughly 2 × 10²³ molecules." }),
+  E(1, "Septillion", "10^{24}", "about ×1.7", "A thousand sextillions.", { s: "Estimates of the stars in the observable universe run from about 10²² up to 10²⁴: as many as a septillion." }),
+  E(1, "Octillion", "10^{27}", "×1,000", "A thousand septillions.", { s: "A human body is made of about 7 × 10²⁷ atoms, around seven octillion." }),
+  E(1, "Nonillion", "10^{30}", "×1,000", "Spelled with an ‘i’: nonillion. Nine, in Latin, plus the same -illion.", { s: "The Sun weighs about 2 nonillion kilograms. Earth’s bacteria and archaea number around 5 nonillion." }),
+  E(1, "Decillion", "10^{33}", "×1,000", "Ten, in Latin: the tenth step of the short-scale names.", { s: "Counted in grams, the Sun weighs about 2 decillion." }),
+  E(1, "Undecillion … Novemdecillion", "10^{36} … 10^{60}", "nine more names, each ×1,000", "Undecillion, duodecillion, tredecillion, quattuordecillion, quindecillion, sexdecillion, septendecillion, octodecillion, novemdecillion. The names keep going; the wiki lists them all.", { s: "Counted in kilograms, the Milky Way weighs roughly 3 × 10⁴², a few tredecillion." }),
+  E(1, "Vigintillion", "10^{63}", "×1,000", "Twenty, in Latin: the twentieth name in the short scale.", { s: "The observable universe is about 5 × 10⁶¹ Planck lengths across, around a twentieth of a vigintillion." }),
+  E(1, "Eddington’s number", "1.57 × 10^{79}", "about ×10¹⁶", "Arthur Eddington’s estimate of the protons in the observable universe: 136 × 2²⁵⁶.", { s: "About as many as the atoms in the whole observable universe." }),
+  E(1, "Googol", "10^{100}", "about ×6 × 10²⁰", "A 1 followed by 100 zeros. Coined in 1938 by nine-year-old Milton Sirotta; his uncle, the mathematician Edward Kasner, popularised it.", { s: "A googol is 10²⁰ times more than the atoms in the observable universe (about 10⁸⁰)." }),
+  E(1, "Planck volumes in the universe", "4.6 × 10^{185}", "about ×4.6 × 10⁸⁵", "Roughly how many Planck volumes, the smallest volume that means anything in physics, fit in the observable universe.", { s: "Fill the whole visible universe with the tiniest cells physics allows and you have only about 10¹⁸⁵ of them: still fewer than a googol squared." }),
+  E(1, "Centillion", "10^{303}", "about ×2 × 10¹¹⁷", "The short-scale name for 10³⁰³.", { s: "Even all the Planck volumes in the universe (about 10¹⁸⁵) leave you short by a factor of 10¹¹⁷." }),
   E(1, "Short Infinity", "2^{1,024}", "about ×180,000", "The wiki’s name for the first number a 64-bit floating-point value cannot hold. Computers print anything this big as “Infinity”.", { a: "≈ 1.80 × 10^{308}" }),
   E(1, "Faxul", "200!", "about ×4 × 10⁶⁶", "200 factorial: 1 × 2 × 3 × … × 200. Factorials outgrow any plain exponential.", { a: "≈ 7.9 × 10^{374}" }),
   E(1, "Googolchime", "10^{1,000}", "about ×10⁶²⁵", "A 1 followed by a thousand zeros."),
   E(1, "Millillion", "10^{3,003}", "×10²⁰⁰³", "The short-scale name for 10^(3·1000+3): the thousandth ‘-illion’."),
   // 2 · Powers of powers
-  E(2, "Largest known prime", "2^{136,279,841} − 1", "the exponent: 3,003 → 41 million", "A Mersenne prime with about 41 million digits: the largest known prime, according to the wiki as of 2026.", { a: "≈ 8.8 × 10^{41,024,319}" }),
-  E(2, "Trialogue", "10^{10^{10}}", "the exponent: 41 million → 10 billion", "10↑↑3, a tower of three tens: a 1 followed by ten billion zeros. The ‘-logue’ names count the tens in a tower."),
+  E(2, "Largest known prime", "2^{136,279,841} − 1", "the exponent: 3,003 → 41 million", "A Mersenne prime with about 41 million digits: the largest known prime, according to the wiki as of 2026.", { a: "≈ 8.8 × 10^{41,024,319}", s: "Printed at 3,000 digits a page, it would fill about 13,700 pages." }),
+  E(2, "Trialogue", "10^{10^{10}}", "the exponent: 41 million → 10 billion", "10↑↑3, a tower of three tens: a 1 followed by ten billion zeros. The ‘-logue’ names count the tens in a tower.", { s: "Printed at 3,000 digits a page, its ten billion digits would make a stack of paper about 330 metres high: as tall as the Eiffel Tower." }),
   E(2, "Ballium’s number", "2.035 × 10^{138,732,019,349}", "the exponent: 10 billion → 139 billion", "Listed on the wiki with an approximate value only, so it is shown as given."),
   E(2, "3↑↑4", "3^{3^{3^{3}}}", "the exponent: 139 billion → 3.6 trillion", "Tetration: 3^(3^(3^3)) = 3^7,625,597,484,987. The wiki writes it ⁴3.", { a: "≈ 1.26 × 10^{3,638,334,640,024}", l: ["uparrow.html?base=3&arrows=2&n=4", "build it on the Up-arrows page"] }),
-  E(2, "Googolplex", "10^{10^{100}}", "the exponent: 3.6 trillion → a googol", "10 to the power of a googol. It has more digits than there are atoms in the observable universe, so it cannot be written out."),
+  E(2, "Googolplex", "10^{10^{100}}", "the exponent: 3.6 trillion → a googol", "10 to the power of a googol. It has more digits than there are atoms in the observable universe, so it cannot be written out.", { s: "Give every atom in the universe one digit and you would run out at 10⁸⁰: a googolplex needs 10¹⁰⁰ digits." }),
   E(2, "Googolbang", "(10^{100})!", "the exponent: 10¹⁰⁰ → about 10¹⁰²", "A googol factorial: multiply every whole number up to a googol.", { a: "≈ 10^{9.957 × 10^{101}}" }),
   E(2, "Kilofaxul", "(200!)!", "the exponent: 10¹⁰² → 10³⁷⁹", "The factorial of Faxul, which was already 200!.", { a: "≈ 10^{10^{379}}" }),
   E(2, "Googolplexichime", "10^{10^{1,000}}", "the exponent: 10³⁷⁹ → 10¹⁰⁰⁰", "A googolplex-style number with a thousand in place of the hundred."),
@@ -350,6 +357,12 @@ function App() {
         <div style={{ fontFamily: DISP, fontSize: fs, color: e.v === e.n ? T.outline : "#f1f5f9", margin: "4px 0 2px", lineHeight: 1.15, overflowWrap: "anywhere" }}><Val s={e.v} /></div>
         {e.a && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 2 }}><Val s={e.a} /></div>}
         <div style={{ fontSize: 12.5, color: "#a5b4c8", lineHeight: 1.65, marginTop: 10, maxWidth: 680 }}><Val s={e.t} /></div>
+        {e.s && (
+          <div style={{ marginTop: 12, padding: "8px 12px", borderLeft: `2px solid ${T.outline}`, background: T.a(40, 0.12), borderRadius: "0 8px 8px 0", maxWidth: 680 }}>
+            <span style={{ display: "block", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: T.outline, marginBottom: 2 }}>to get a feel for it</span>
+            <span style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.6 }}>{e.s}</span>
+          </div>
+        )}
         {e.l && <a href={e.l[0]} style={{ display: "inline-block", marginTop: 10, fontSize: 11, color: T.outline, textDecoration: "none", border: `1px solid ${T.a(62, 0.3)}`, borderRadius: 8, padding: "4px 10px" }}>▦ {e.l[1]} →</a>}
 
         {/* link to the next number */}
@@ -405,7 +418,7 @@ function App() {
         Names, values and order follow the Googology Wiki’s “List of numbers”,
         {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>.
         It selects the notable entries of each class from a far longer list. The line is not to scale: each tick is one entry, and the numbers become incomparably larger toward the right.
-        Names are conventions, so “billion” and “trillion” differ between countries, and the wiki flags some entries as ill-defined.
+        Names are conventions, so “billion” and “trillion” differ between countries, and the wiki flags some entries as ill-defined. Comparisons use rounded, commonly cited estimates.
       </div>
     </div>
   );
