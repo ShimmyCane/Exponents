@@ -81,13 +81,13 @@ const ENTRIES = [
   E(1, "Sextillion", "10^{21}", "×1,000", "The names are Latin: sex- means six, and each -illion is another thousand.", { s: "The Earth weighs about 6 sextillion tonnes." }),
   E(1, "Avogadro’s number", "6.022 × 10^{23}", "about ×600", "How many particles make a mole: the atoms in 12 grams of carbon-12. A number chemists really use.", { s: "A teaspoon of water holds roughly 2 × 10²³ molecules." }),
   E(1, "Septillion", "10^{24}", "about ×1.7", "A thousand sextillions.", { s: "Estimates of the stars in the observable universe run from about 10²² up to 10²⁴: as many as a septillion." }),
-  E(1, "Octillion", "10^{27}", "×1,000", "A thousand septillions.", { s: "A human body is made of about 7 × 10²⁷ atoms, around seven octillion." }),
+  E(1, "Octillion", "10^{27}", "×1,000", "A thousand septillions.", { s: "A 70-kilogram adult is made of about 7 × 10²⁷ atoms, around seven octillion." }),
   E(1, "Nonillion", "10^{30}", "×1,000", "Spelled with an ‘i’: nonillion. Nine, in Latin, plus the same -illion.", { s: "The Sun weighs about 2 nonillion kilograms. Earth’s bacteria and archaea number around 5 nonillion." }),
   E(1, "Decillion", "10^{33}", "×1,000", "Ten, in Latin: the tenth step of the short-scale names.", { s: "Counted in grams, the Sun weighs about 2 decillion." }),
-  E(1, "Undecillion … Novemdecillion", "10^{36} … 10^{60}", "nine more names, each ×1,000", "Undecillion, duodecillion, tredecillion, quattuordecillion, quindecillion, sexdecillion, septendecillion, octodecillion, novemdecillion. The names keep going; the wiki lists them all.", { s: "Counted in kilograms, the Milky Way weighs roughly 3 × 10⁴², a few tredecillion." }),
+  E(1, "Undecillion … Novemdecillion", "10^{36} … 10^{60}", "nine more names, each ×1,000", "Undecillion, duodecillion, tredecillion, quattuordecillion, quindecillion, sexdecillion, septendecillion, octodecillion, novemdecillion. The names keep going; the wiki lists them all.", { s: "Counted in kilograms, the Milky Way weighs about 2 × 10⁴² (roughly 1.15 trillion Suns, mostly dark matter): a couple of tredecillion." }),
   E(1, "Vigintillion", "10^{63}", "×1,000", "Twenty, in Latin: the twentieth name in the short scale.", { s: "The observable universe is about 5 × 10⁶¹ Planck lengths across, around a twentieth of a vigintillion." }),
   E(1, "Eddington’s number", "1.57 × 10^{79}", "about ×10¹⁶", "Arthur Eddington’s estimate of the protons in the observable universe: 136 × 2²⁵⁶.", { s: "About as many as the atoms in the whole observable universe." }),
-  E(1, "Googol", "10^{100}", "about ×6 × 10²⁰", "A 1 followed by 100 zeros. Coined in 1938 by nine-year-old Milton Sirotta; his uncle, the mathematician Edward Kasner, popularised it.", { s: "A googol is 10²⁰ times more than the atoms in the observable universe (about 10⁸⁰)." }),
+  E(1, "Googol", "10^{100}", "about ×6 × 10²⁰", "A 1 followed by 100 zeros. Coined by nine-year-old Milton Sirotta, nephew of the mathematician Edward Kasner, who popularised it in 1940.", { s: "A googol is 10²⁰ times more than the atoms in the observable universe (about 10⁸⁰)." }),
   E(1, "Planck volumes in the universe", "4.6 × 10^{185}", "about ×4.6 × 10⁸⁵", "Roughly how many Planck volumes, the smallest volume that means anything in physics, fit in the observable universe.", { s: "Fill the whole visible universe with the tiniest cells physics allows and you have only about 10¹⁸⁵ of them: still fewer than a googol squared." }),
   E(1, "Centillion", "10^{303}", "about ×2 × 10¹¹⁷", "The short-scale name for 10³⁰³.", { s: "Even all the Planck volumes in the universe (about 10¹⁸⁵) leave you short by a factor of 10¹¹⁷." }),
   E(1, "Short Infinity", "2^{1,024}", "about ×180,000", "The wiki’s name for the first number a 64-bit floating-point value cannot hold. Computers print anything this big as “Infinity”.", { a: "≈ 1.80 × 10^{308}" }),
@@ -101,17 +101,17 @@ const ENTRIES = [
   E(2, "3↑↑4", "3^{3^{3^{3}}}", "the exponent: 139 billion → 3.6 trillion", "Tetration: 3^(3^(3^3)) = 3^7,625,597,484,987. The wiki writes it ⁴3.", { a: "≈ 1.26 × 10^{3,638,334,640,024}", l: ["uparrow.html?base=3&arrows=2&n=4", "build it on the Up-arrows page"] }),
   E(2, "Googolplex", "10^{10^{100}}", "the exponent: 3.6 trillion → a googol", "10 to the power of a googol. It has more digits than there are atoms in the observable universe, so it cannot be written out.", { s: "Give every atom in the universe one digit and you would run out at 10⁸⁰: a googolplex needs 10¹⁰⁰ digits." }),
   E(2, "Googolbang", "(10^{100})!", "the exponent: 10¹⁰⁰ → about 10¹⁰²", "A googol factorial: multiply every whole number up to a googol.", { a: "≈ 10^{9.957 × 10^{101}}" }),
-  E(2, "Kilofaxul", "(200!)!", "the exponent: 10¹⁰² → 10³⁷⁹", "The factorial of Faxul, which was already 200!.", { a: "≈ 10^{10^{379}}" }),
-  E(2, "Googolplexichime", "10^{10^{1,000}}", "the exponent: 10³⁷⁹ → 10¹⁰⁰⁰", "A googolplex-style number with a thousand in place of the hundred."),
+  E(2, "Kilofaxul", "(200!)!", "the exponent: 10¹⁰² → 10³⁷⁷", "The factorial of Faxul, which was already 200!.", { a: "≈ 10^{10^{377.5}}" }),
+  E(2, "Googolplexichime", "10^{10^{1,000}}", "the exponent: 10³⁷⁷ → 10¹⁰⁰⁰", "A googolplex-style number with a thousand in place of the hundred."),
   // 3 · Towers
   E(3, "Tetralogue", "10^{10^{10^{10}}}", "one more “10 to the power of”", "10↑↑4: four tens stacked. The number of digits is itself a number with ten billion digits."),
   E(3, "First Skewes number", "10^{10^{10^{34}}}", "the top exponent: 10 → 34", "In 1933 Skewes bounded where the prime count first overtakes a logarithmic estimate, assuming the Riemann hypothesis. The wiki writes e^e^e^79.", { a: "≈ e^{e^{e^{79}}}" }),
   E(3, "Googolduplex", "10^{10^{10^{100}}}", "the top exponent: 34 → 100", "Googol, googolplex, googolduplex: each name adds one more “10 to the power of”."),
-  E(3, "Megafaxul", "((200!)!)!", "the top exponent: 100 → 379", "Faxul with the factorial taken three times.", { a: "≈ 10^{10^{10^{379}}}" }),
-  E(3, "Second Skewes number", "10^{10^{10^{963}}}", "the top exponent: 379 → 963", "Skewes’ later bound (1955), which does not assume the Riemann hypothesis. The wiki writes e^e^e^e^7.705.", { a: "≈ e^{e^{e^{e^{7.705}}}}" }),
+  E(3, "Megafaxul", "((200!)!)!", "the top exponent: 100 → 377", "Faxul with the factorial taken three times.", { a: "≈ 10^{10^{10^{377.5}}}" }),
+  E(3, "Second Skewes number", "10^{10^{10^{963}}}", "the top exponent: 377 → 963", "Skewes’ later bound (1955), which does not assume the Riemann hypothesis. The wiki writes e^e^e^e^7.705.", { a: "≈ e^{e^{e^{e^{7.705}}}}" }),
   E(3, "Googolduplexichime", "10^{10^{10^{1,000}}}", "the top exponent: 963 → 1,000", "The same tower, with a thousand at the top."),
   E(3, "Pentalogue", "10↑↑5", "one more “10 to the power of”", "Five tens stacked. The wiki’s fifth class begins just below it.", { a: "10^{10^{10^{10^{10}}}}" }),
-  E(3, "Poincaré’s number", "10^{10^{10^{10^{13}}}}", "the top exponent: 10 → 13", "Listed on the wiki between the Pentalogue and the Googoltriplex. Poincaré recurrence is the idea that a closed system eventually returns near its starting state."),
+  E(3, "Poincaré’s number", "10^{10^{10^{10^{13}}}}", "the top exponent: 10 → 13", "Listed on the wiki, under this name, between the Pentalogue and the Googoltriplex. Poincaré recurrence is the idea that a closed system eventually returns near its starting state."),
   E(3, "Googoltriplex", "10^{10^{10^{10^{100}}}}", "the top exponent: 13 → 100", "Googolduplex with one more level."),
   E(3, "Hexalogue", "10↑↑6", "one more “10 to the power of”", "Six tens stacked.", { a: "10^{10^{10^{10^{10^{10}}}}}" }),
   E(3, "Octalogue", "10↑↑8", "two more tower levels", "Eight tens stacked."),
@@ -142,7 +142,7 @@ const ENTRIES = [
   E(6, "TREE(3)", "TREE(3)", "a function from a theorem about trees", "From Kruskal’s tree theorem: the longest possible sequence of labelled trees, each not embedded in an earlier one. The wiki gives only a lower bound.", { a: "lower bound f_ψ₀(Ω_Ω^ω)(3)" }),
   E(6, "SSCG(3)", "SSCG(3)", "a function from a theorem about graphs", "From Friedman’s subcubic graph problem: the longest sequence of subcubic graphs obeying a rule. The wiki gives only a lower bound, and it is far larger than TREE(3)."),
   E(6, "Loader’s number", "D⁵(99)", "a program, not a formula", "The output of a short program by Ralph Loader (2001) that runs every well-formed expression of the calculus of constructions."),
-  E(6, "Σ(745)", "Σ(745)", "the busy beaver function", "A busy beaver number: the wiki marks it as the smallest known one that cannot be proved in ZFC."),
+  E(6, "Σ(745)", "Σ(745)", "the busy beaver function", "A busy beaver number. The wiki marks it as the smallest known one that cannot be proved in ZFC."),
   E(6, "Σ(1919)", "Σ(1919)", "a later busy beaver number", "The wiki gives this as an upper bound for the smallest busy beaver number unprovable in ZFC."),
   E(6, "Rayo’s number", "Rayo(10^{100})", "a number defined by logic", "The smallest number bigger than any number that a first-order set-theory formula of a googol symbols can name. The wiki marks its definition as only partly settled.", { x: "partly ill-defined" }),
   E(6, "BIG FOOT", "FOOT(10^{100})", "a bigger notation", "The wiki lists BIG FOOT, Little Bigeddon and Sasquatch as ill-defined: the notations were never made precise enough to be sure they name a number.", { x: "ill-defined" }),
@@ -216,54 +216,394 @@ function EdgeArrow({ page, side }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 4  THE LINE — every tick is one entry; drag or click to travel
+//  § 2b  SOURCES AND DEFINITIONS
+//
+//  DEF   how each number is defined, broken into steps (same ^{…}
+//        superscript markup as the values).
+//  SRC   where to check it.  Keys refer to LINKS below.
+//  A step that says “the wiki” is something I could not confirm
+//  outside the Googology Wiki.
 // ═══════════════════════════════════════════════════════════════
-function useNarrow() {
-  const [n, setN] = useState(() => window.innerWidth < 620);
-  useEffect(() => {
-    const f = () => setN(window.innerWidth < 620);
-    window.addEventListener("resize", f);
-    return () => window.removeEventListener("resize", f);
-  }, []);
-  return n;
+const LINKS = {
+  wiki:     ["List of numbers (Googology Wiki)", "https://googology.miraheze.org/wiki/List_of_numbers"],
+  shortlong:["Long and short scales (Wikipedia)", "https://en.wikipedia.org/wiki/Long_and_short_scales"],
+  names:    ["Names of large numbers (Wikipedia)", "https://en.wikipedia.org/wiki/Names_of_large_numbers"],
+  indian:   ["Indian numbering system (Wikipedia)", "https://en.wikipedia.org/wiki/Indian_numbering_system"],
+  lakh:     ["Lakh (Wikipedia)", "https://en.wikipedia.org/wiki/Lakh"],
+  crore:    ["Crore (Wikipedia)", "https://en.wikipedia.org/wiki/Crore"],
+  myriad:   ["Myriad (Wikipedia)", "https://en.wikipedia.org/wiki/Myriad"],
+  googol:   ["Googol (Wikipedia)", "https://en.wikipedia.org/wiki/Googol"],
+  guinness: ["Largest named number (Guinness World Records)", "https://www.guinnessworldrecords.com/world-records/385515-largest-named-number"],
+  avogadro: ["Avogadro constant (Wikipedia)", "https://en.wikipedia.org/wiki/Avogadro_constant"],
+  atoms:    ["How many atoms are in the observable universe? (Space.com)", "https://www.space.com/how-many-atoms-in-universe"],
+  atoms2:   ["How many atoms are in the observable universe? (Live Science)", "https://www.livescience.com/how-many-atoms-in-universe.html"],
+  body:     ["How many atoms are in a human? (I’m a Scientist)", "https://archive.imascientist.org.uk/orange21-zone/question/how-many-atoms-are-in-a-human/index.html"],
+  ants:     ["The abundance, biomass, and distribution of ants on Earth (PNAS, 2022)", "https://pmc.ncbi.nlm.nih.gov/articles/PMC9546634"],
+  prok:     ["Prokaryotes: the unseen majority (PNAS, 1998)", "https://pmc.ncbi.nlm.nih.gov/articles/PMC33863"],
+  sun:      ["Sun Fact Sheet (NASA NSSDC)", "https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html"],
+  mw:       ["Milky Way (Wikipedia)", "https://en.wikipedia.org/wiki/Milky_Way"],
+  planck:   ["Planck length (Swinburne COSMOS)", "https://astronomy.swinburne.edu.au/cosmos/P/Planck+Length"],
+  edd:      ["Eddington number (Wikipedia)", "https://en.wikipedia.org/wiki/Eddington_number"],
+  eddmw:    ["Eddington number (MathWorld)", "https://mathworld.wolfram.com/EddingtonNumber.html"],
+  dbl:      ["Double-precision floating-point format (Wikipedia)", "https://en.wikipedia.org/wiki/Double-precision_floating-point_format"],
+  fact:     ["Factorial (Wikipedia)", "https://en.wikipedia.org/wiki/Factorial"],
+  prime:    ["Largest known prime number (Wikipedia)", "https://en.wikipedia.org/wiki/Largest_known_prime_number"],
+  primeNews:["M136279841: new largest known Mersenne prime (heise online)", "https://heise.de/en/news/M136279841-New-largest-known-Mersenne-prime-number-confirmed-with-GPU-9989146.html"],
+  smith:    ["Amateur mathematician discovers the largest known prime (Smithsonian)", "https://www.smithsonianmag.com/smart-news/amateur-mathematician-discovers-the-largest-known-prime-number-with-more-than-41-million-digits-180985321/"],
+  up:       ["Knuth’s up-arrow notation (Wikipedia)", "https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation"],
+  tet:      ["Tetration (Wikipedia)", "https://en.wikipedia.org/wiki/Tetration"],
+  skNicely: ["Skewes’ problem (Thomas R. Nicely)", "https://faculty.lynchburg.edu/~nicely/pi/skewes.htm"],
+  skCRC:    ["Skewes number (CRC Concise Encyclopedia of Mathematics)", "https://archive.lib.msu.edu/crcmath/math/math/s/s380.htm"],
+  skArx:    ["A new bound for the smallest x with π(x) > li(x) (arXiv)", "https://arxiv.org/pdf/math/0509312"],
+  pr:       ["Poincaré recurrence theorem (Wikipedia)", "https://en.wikipedia.org/wiki/Poincar%C3%A9_recurrence_theorem"],
+  graham:   ["Graham’s number (Wikipedia)", "https://en.wikipedia.org/wiki/Graham%27s_number"],
+  grahamY:  ["Graham’s number (Susan Stepney, University of York)", "https://www-users.york.ac.uk/~ss44/cyc/g/graham.htm"],
+  grahamG:  ["Ron Graham and the Guinness Book of Records (UC San Diego)", "https://mathweb.ucsd.edu/~fan/ron/images/guiness.html"],
+  conway:   ["Conway chained arrow notation (Wikipedia)", "https://en.wikipedia.org/wiki/Conway_chained_arrow_notation"],
+  tetratri: ["Conway’s Tetratri (Googology Wiki)", "https://googology.fandom.com/wiki/Conway%27s_Tetratri"],
+  sm:       ["Steinhaus–Moser notation (Wikipedia)", "https://en.wikipedia.org/wiki/Steinhaus%E2%80%93Moser_notation"],
+  smCRC:    ["Steinhaus–Moser notation (CRC Concise Encyclopedia)", "https://archive.lib.msu.edu/crcmath/math/math/s/s722.htm"],
+  smMrob:   ["Large numbers, part 5 (Robert Munafo)", "https://www.mrob.com/pub/math/largenum-5.html"],
+  ack:      ["Ackermann function (Wikipedia)", "https://en.wikipedia.org/wiki/Ackermann_function"],
+  fgh:      ["Fast Growing Hierarchy (Chris Bird)", "https://mrob.com/users/chrisb/Fast-Growing_Hierarchy.pdf"],
+  fgh2:     ["Fast-growing functions (cp4space)", "https://cp4space.hatsya.com/2012/12/15/fast-growing-1/"],
+  bowers:   ["Bowers Named Numbers (Chris Bird)", "https://mrob.com/users/chrisb/Bowers_Named_Numbers.pdf"],
+  bowersW:  ["Jonathan Bowers (Googology Wiki)", "https://googology.fandom.com/wiki/Jonathan_Bowers"],
+  birdW:    ["Chris Bird (Googology Wiki)", "https://googology.fandom.com/wiki/Chris_Bird"],
+  tree:     ["Kruskal’s tree theorem and the TREE function (Wikipedia)", "https://en.wikipedia.org/wiki/Kruskal%27s_tree_theorem"],
+  treeW:    ["TREE sequence (Googology Wiki)", "https://googology.fandom.com/wiki/TREE_sequence"],
+  sscg:     ["Friedman’s SSCG function (Wikipedia)", "https://en.wikipedia.org/wiki/Friedman%27s_SSCG_function"],
+  sscgG:    ["Graph minors (Adam P. Goucher, cp4space)", "https://cp4space.hatsya.com/2013/01/13/graph-minors/"],
+  loader:   ["Loader’s number (Googology Wiki)", "https://googology.fandom.com/wiki/Loader%27s_number"],
+  loaderM:  ["Bignum Bakeoff clarification (David Moews, 2001)", "https://djm.cc/bignum-clarification-i.txt"],
+  bbFront:  ["Busy Beaver Frontier (bbchallenge wiki)", "https://wiki.bbchallenge.org/wiki/Busy_Beaver_Frontier"],
+  bbnlab:   ["Busy beaver function (nLab)", "https://ncatlab.org/nlab/show/Busy+Beaver+function"],
+  bbzfc:    ["A relatively small Turing machine whose behavior is independent of set theory (arXiv)", "https://arxiv.org/pdf/1605.04343"],
+  bbAaron:  ["Busy Beaver updates (Shtetl-Optimized)", "https://scottaaronson.blog/?p=6673"],
+  bignum:   ["Who Can Name the Bigger Number? (Scott Aaronson)", "https://www.scottaaronson.com/writings/bignumbers.html"],
+  rayo:     ["Rayo’s number (Wikipedia)", "https://en.wikipedia.org/wiki/Rayo%27s_number"],
+  rayoOUP:  ["Really big numbers (Oxford University Press blog)", "https://blog.oup.com/2017/01/really-big-numbers/"],
+  xkcdB:    ["The Clarkkkkson vs. the xkcd number (xkcd blog)", "https://blog.xkcd.com/2007/01/11/the-clarkkkkson-vs-the-xkcd-number/"],
+  xkcdW:    ["xkcd number (Googology Wiki)", "https://googology.fandom.com/wiki/Xkcd_number"],
+  hollom:   ["Lawrence Hollom (Googology Wiki)", "https://googology.fandom.com/wiki/Lawrence_Hollom"],
+};
+
+const SRC = {
+  "One": [], "Ten": [], "Hundred": [], "Thousand": [], "Hundred million": [],
+  "Myriad": ["myriad"], "Lakh": ["lakh", "indian"], "Crore": ["crore", "indian"], "Million": ["names"],
+  "Billion": ["shortlong", "names"], "Trillion": ["shortlong", "names"], "Quadrillion": ["names", "ants"],
+  "Quintillion": ["names", "mw"], "Sextillion": ["names", "sun"], "Avogadro’s number": ["avogadro"],
+  "Septillion": ["names", "atoms"], "Octillion": ["names", "body"], "Nonillion": ["names", "sun", "prok"],
+  "Decillion": ["names", "sun"], "Undecillion … Novemdecillion": ["names", "mw"], "Vigintillion": ["names", "planck"],
+  "Eddington’s number": ["edd", "eddmw", "atoms"], "Googol": ["googol", "guinness", "atoms2"],
+  "Planck volumes in the universe": ["planck", "atoms"], "Centillion": ["names"],
+  "Short Infinity": ["dbl"], "Faxul": ["fact"], "Googolchime": [], "Millillion": ["names"],
+  "Largest known prime": ["prime", "primeNews", "smith"], "Trialogue": ["up"], "Ballium’s number": [],
+  "3↑↑4": ["tet", "up"], "Googolplex": ["googol", "guinness"], "Googolbang": ["fact"],
+  "Kilofaxul": ["fact"], "Googolplexichime": [],
+  "Tetralogue": ["up", "tet"], "First Skewes number": ["skNicely", "skCRC", "skArx"], "Googolduplex": ["googol"],
+  "Megafaxul": ["fact"], "Second Skewes number": ["skNicely", "skCRC"], "Googolduplexichime": [],
+  "Pentalogue": ["up", "tet"], "Poincaré’s number": ["pr"], "Googoltriplex": ["googol"],
+  "Hexalogue": ["up", "tet"], "Octalogue": ["up", "tet"], "Hexadekalogue": ["up", "tet"],
+  "Mega": ["sm", "smCRC", "smMrob"], "Megalogue": ["up"], "Tritri": ["up", "tet", "bowers"], "Googolgoogolplex": ["up"],
+  "Hexa-taxis": ["up"], "Megiston": ["sm", "smCRC", "smMrob"], "Gaggol": ["up", "bowers"], "Gaggolchime": ["up"],
+  "Googol-3-flex": ["up"], "Grahal": ["graham", "grahamY", "up"], "Hexar": ["up", "bowers"], "Boogol": ["up", "bowers"],
+  "Moser’s number": ["sm", "smCRC", "smMrob"], "Graham’s second number": ["graham", "grahamY"],
+  "Graham’s number": ["graham", "grahamY", "grahamG"], "xkcd number": ["xkcdB", "xkcdW", "ack"],
+  "Conway’s Tetratri": ["conway", "tetratri"], "Conway’s Tetratet": ["conway"],
+  "Gongulus": ["bowers", "bowersW"], "Bird’s number": ["birdW", "fgh"], "TREE(3)": ["tree", "treeW"],
+  "SSCG(3)": ["sscg", "sscgG"], "Loader’s number": ["loader", "loaderM"],
+  "Σ(745)": ["bbFront", "bbzfc", "bbnlab", "bbAaron"], "Σ(1919)": ["bbFront", "bignum"],
+  "Rayo’s number": ["rayo", "rayoOUP"], "BIG FOOT": [], "Little Bigeddon": [], "Sasquatch": [],
+  "Hollom’s number": ["hollom"],
+};
+
+const DEF = {
+  "One": ["The number you get by counting a single thing.", "1 × n = n for every n: it is the multiplicative identity, and every other whole number is 1 added to itself some number of times."],
+  "Ten": ["10 = 10^{1}.", "Our number system is base ten: each place to the left is worth ×10."],
+  "Hundred": ["100 = 10 × 10 = 10^{2}."],
+  "Thousand": ["1,000 = 10 × 100 = 10^{3}.", "In the short scale, each name above a million is ×1,000 the one before."],
+  "Myriad": ["10,000 = 10^{4}, from the Greek word for ten thousand.", "Some East Asian languages count in units of 10,000: 10^{8} is 10,000 × 10,000."],
+  "Lakh": ["1 lakh = 100,000 = 10^{5}.", "Indian digit grouping writes it 1,00,000: after the first three digits, digits are grouped in pairs."],
+  "Million": ["1,000,000 = 1,000 × 1,000 = 10^{6}.", "In the short-scale naming rule, million is n = 1: 10^{3n+3} = 10^{6}."],
+  "Crore": ["1 crore = 100 lakh = 10,000,000 = 10^{7}.", "Written 1,00,00,000 in Indian digit grouping."],
+  "Hundred million": ["100,000,000 = 10^{8} = 10 crore."],
+  "Billion": ["Short scale: n-illion = 10^{3n+3}. Billion is n = 2, so 10^{3·2+3} = 10^{9}.", "Long scale (continental Europe, older British usage): billion = 10^{12}, and 10^{9} is a milliard."],
+  "Trillion": ["Short scale: n = 3, so 10^{3·3+3} = 10^{12} = 1,000 billions.", "Long scale: trillion = 10^{18}."],
+  "Quadrillion": ["Short scale: n = 4, so 10^{3·4+3} = 10^{15}."],
+  "Quintillion": ["Short scale: n = 5, so 10^{18}."],
+  "Sextillion": ["Short scale: n = 6, so 10^{21}.", "The prefix is the Latin numeral for n: bi-, tri-, quadri-, quin-, sex-, sept-, oct-, non-, dec-…"],
+  "Avogadro’s number": ["Since the 2019 SI redefinition, one mole is exactly 6.02214076 × 10^{23} elementary entities (atoms, molecules, …).", "The value was chosen to match the older definition: about this many atoms in 12 grams of carbon-12."],
+  "Septillion": ["Short scale: n = 7, so 10^{24}."],
+  "Octillion": ["Short scale: n = 8, so 10^{27}."],
+  "Nonillion": ["Short scale: n = 9, so 10^{30}.", "Spelled with an ‘i’: non- (nine, in Latin) + -illion."],
+  "Decillion": ["Short scale: n = 10, so 10^{33}."],
+  "Undecillion … Novemdecillion": ["Same rule, n = 11 to 19: 10^{3n+3} runs from 10^{36} to 10^{60}.", "In order: undecillion, duodecillion, tredecillion, quattuordecillion, quindecillion, sexdecillion, septendecillion, octodecillion, novemdecillion."],
+  "Vigintillion": ["Short scale: n = 20 (Latin viginti, twenty), so 10^{3·20+3} = 10^{63}."],
+  "Eddington’s number": ["In the 1930s Eddington argued that the fine-structure constant was exactly 1/136 (he later revised it to 1/137).", "From that he derived the count of protons in the universe: 136 × 2^{256} ≈ 1.57 × 10^{79}.", "Modern estimates put the atoms in the observable universe at about 10^{80} (the range is 10^{78} to 10^{82})."],
+  "Googol": ["A googol is 10^{100}: a 1 followed by 100 zeros.", "Milton Sirotta, aged nine, nephew of the mathematician Edward Kasner, coined the word. Kasner and James Newman popularised it in Mathematics and the Imagination (1940).", "Sources differ on when Milton coined it: Wikipedia says 1920, Guinness World Records says 1938."],
+  "Planck volumes in the universe": ["The Planck length is ℓ_P = √(ħG/c³) ≈ 1.616 × 10^{−35} m.", "A Planck volume is ℓ_P³ ≈ 4.2 × 10^{−105} m³.", "The observable universe has a radius of about 4.4 × 10^{26} m, so a volume of about 3.6 × 10^{80} m³.", "The wiki gives 4.6 × 10^{185}. Dividing the two volumes above gives about 8 × 10^{184}: the same order of magnitude, roughly 10^{185}."],
+  "Centillion": ["Short scale: n = 100 (Latin centum, a hundred), so 10^{3·100+3} = 10^{303}."],
+  "Short Infinity": ["A 64-bit IEEE-754 floating-point number has an 11-bit exponent, so the largest finite value is (2 − 2^{−52}) × 2^{1023}.", "That is about 1.797 × 10^{308}. A result at or above 2^{1,024} overflows and is stored as Infinity.", "The wiki calls 2^{1,024} Googlek or Short Infinity."],
+  "Faxul": ["n! = 1 × 2 × 3 × … × n.", "200! ≈ 7.886 × 10^{374}, a number with 375 digits."],
+  "Googolchime": ["10^{1,000}: a 1 followed by a thousand zeros.", "The name is the wiki’s."],
+  "Millillion": ["Short scale: n = 1,000 (Latin mille), so 10^{3·1000+3} = 10^{3,003}."],
+  "Largest known prime": ["A Mersenne number is 2^{p} − 1. It is a Mersenne prime when it is prime.", "p = 136,279,841 gives the 52nd known Mersenne prime, found on 12 October 2024 by Luke Durant using GPUs in the cloud, through the GIMPS project.", "Its digits: ⌊p × log₁₀ 2⌋ + 1 = 41,024,320."],
+  "Trialogue": ["10↑↑3 = 10^{10^{10}}, a tower of three tens.", "Evaluated from the top: 10^{10} = 10,000,000,000, so the number is 10^{10,000,000,000}."],
+  "Ballium’s number": ["The wiki gives only its value: about 2.035 × 10^{138,732,019,349}.", "I could not find it defined anywhere outside the wiki."],
+  "3↑↑4": ["3↑↑1 = 3.", "3↑↑2 = 3^{3} = 27.", "3↑↑3 = 3^{27} = 7,625,597,484,987.", "3↑↑4 = 3^{3↑↑3} = 3^{7,625,597,484,987}, which has about 3.638 × 10^{12} digits."],
+  "Googolplex": ["A googol is 10^{100}.", "A googolplex is 10^{googol} = 10^{10^{100}}. Kasner gave the exact definition; Milton’s own was “a 1 followed by zeros until you get tired”.", "In decimal it needs a googol + 1 digits, more than the number of atoms in the observable universe (about 10^{80})."],
+  "Googolbang": ["n! = 1 × 2 × … × n.", "A googol factorial, (10^{100})!, has about 9.96 × 10^{101} digits: it is roughly 10^{9.96 × 10^{101}}."],
+  "Kilofaxul": ["Faxul = 200! ≈ 7.9 × 10^{374}.", "Kilofaxul = (200!)!, the factorial of that number.", "Its digit count is about 10^{377}, so the number is about 10^{10^{377.5}}. The wiki writes 10^{10^{379}}; the difference is rounding."],
+  "Googolplexichime": ["10^{10^{1,000}}: like a googolplex, but with a thousand in place of the hundred.", "The name is the wiki’s."],
+  "Tetralogue": ["10↑↑4 = 10^{10^{10^{10}}}, a tower of four tens.", "Evaluate from the top: 10^{10} = 10 billion; 10^{10^{10}} = 10^{10 billion}; then 10 to that."],
+  "First Skewes number": ["π(x) counts the primes up to x. li(x) is the logarithmic integral, a smooth estimate of it. For small x, π(x) < li(x).", "Littlewood proved in 1914 that π(x) − li(x) changes sign infinitely often, but gave no place where it first does.", "In 1933 Skewes showed, assuming the Riemann hypothesis, that the first sign change comes before e^{e^{e^{79}}} ≈ 10^{10^{10^{34}}}.", "The best proven bound today is about 1.4 × 10^{316}."],
+  "Googolduplex": ["Googol = 10^{100}; googolplex = 10^{10^{100}}; googolduplex = 10^{10^{10^{100}}}.", "Each name adds one more “10 to the power of”."],
+  "Megafaxul": ["Faxul = 200!; Kilofaxul = (200!)!; Megafaxul = ((200!)!)!, the factorial taken three times.", "Each factorial adds about one “10 to the power of”: the result is about 10^{10^{10^{377.5}}}."],
+  "Second Skewes number": ["In 1955 Skewes gave the first proof of a bound that does not assume the Riemann hypothesis: the first sign change of π(x) − li(x) comes before 10^{10^{10^{963}}}.", "The wiki writes it e^{e^{e^{e^{7.705}}}}. (Some references quote 959 instead of 963.)"],
+  "Googolduplexichime": ["10^{10^{10^{1,000}}}: googolduplex with a thousand at the top instead of a hundred.", "The name is the wiki’s."],
+  "Pentalogue": ["10↑↑5 = 10^{10^{10^{10^{10}}}}, a tower of five tens.", "The ‘-logue’ numbers are 10↑↑n: tri-, tetra-, penta-, hexa-…"],
+  "Poincaré’s number": ["Poincaré recurrence: a closed system with finitely many states eventually returns arbitrarily close to where it started.", "The wiki lists 10^{10^{10^{10^{13}}}} under Poincaré’s name.", "I could not tie that exact value to a published calculation; treat it as the wiki’s."],
+  "Googoltriplex": ["Googol → googolplex → googolduplex → googoltriplex: 10^{10^{10^{10^{100}}}}, a tower of four tens with a hundred at the top."],
+  "Hexalogue": ["10↑↑6, a tower of six tens."],
+  "Octalogue": ["10↑↑8, a tower of eight tens."],
+  "Hexadekalogue": ["10↑↑16, a tower of sixteen tens."],
+  "Mega": ["Steinhaus’s polygon notation: a number n in a triangle is n^{n}; in a square, n written in n triangles; in a circle, n written in n squares.", "Moser extended this to more sides: a pentagon is n in n circles, and so on.", "Mega is 2 in a circle (the wiki writes it 2[5], a pentagon), roughly 10↑↑258."],
+  "Megalogue": ["10↑↑1,000,000: a tower of a million tens.", "The wiki also calls it Chilia-chilialogue."],
+  "Tritri": ["3↑↑↑1 = 3 and 3↑↑↑2 = 3↑↑3 = 7,625,597,484,987.", "3↑↑↑3 = 3↑↑(3↑↑↑2) = 3↑↑7,625,597,484,987: a tower of 3s that many levels tall.", "Bowers writes it {3,3,3}."],
+  "Googolgoogolplex": ["10↑↑(10^{100}): a tower of tens a googol levels tall.", "The wiki also calls it Googol-stack."],
+  "Hexa-taxis": ["10↑↑↑1 = 10, 10↑↑↑2 = 10↑↑10, and 10↑↑↑n = 10↑↑(10↑↑↑(n−1)).", "So 10↑↑↑6 is a tower of tens whose height is 10↑↑↑5, which is itself a tower."],
+  "Megiston": ["Steinhaus’s notation: 10 in a circle (the wiki writes 10[5], a pentagon).", "The wiki gives it as about 10↑↑↑11."],
+  "Gaggol": ["10↑↑↑100: three arrows, repeated a hundred times, as in 10↑↑↑n = 10↑↑(10↑↑↑(n−1)).", "Bowers’ array notation writes it {10,100,3}."],
+  "Gaggolchime": ["10↑↑↑1,000: the same rule as Gaggol with 1,000 in place of 100."],
+  "Googol-3-flex": ["10↑↑↑(10^{100}): three arrows, repeated a googol times."],
+  "Grahal": ["Knuth arrows: ↑ is exponentiation; ↑↑ repeats ↑; ↑↑↑ repeats ↑↑; ↑↑↑↑ repeats ↑↑↑.", "3↑↑↑↑3 = 3↑↑↑(3↑↑↑3) = 3↑↑↑(3↑↑7,625,597,484,987).", "This is g₁, the first step in building Graham’s number."],
+  "Hexar": ["6↑↑↑↑6: four arrows between two 6s, the same construction as 3↑↑↑↑3 with larger numbers.", "The wiki writes it Q₁,₀(6)."],
+  "Boogol": ["10↑^{100}10: a hundred arrows between two tens.", "Bowers’ array notation writes it {10,10,100}."],
+  "Moser’s number": ["Steinhaus–Moser notation: a number n in a polygon with k sides is n written in n polygons with k − 1 sides.", "Mega is 2 in a pentagon (in the wiki’s notation). Moser’s number is 2 in a megagon: a polygon with Mega sides, not a million.", "The wiki gives it as about 3 ↑ Mega 3."],
+  "Graham’s second number": ["g₁ = 3↑↑↑↑3.", "g₂ = 3 ↑^{g₁} 3: g₁ arrows between two 3s."],
+  "Graham’s number": ["g₁ = 3↑↑↑↑3, and g_{n} = 3 ↑^{g_{n−1}} 3: each step uses the previous number as its count of arrows.", "Graham’s number is G = g₆₄: sixty-four steps of that rule.", "It came from an upper bound (Graham and Rothschild, 1971) in Ramsey theory, on colouring the edges of a hypercube. Their original bound was the smaller F^{7}(12), with F(n) = 2↑^{n}3.", "Ron Graham’s number appeared in the 1980 Guinness Book of Records as the largest number used in a mathematical proof."],
+  "xkcd number": ["The Ackermann function A(m,n) grows like an up-arrow count; the wiki writes A(G,G) = 2↑^{G−2}(G+3) − 3, with G Graham’s number.", "It comes from an xkcd comic by Randall Munroe (2007).", "The wiki says it is smaller than g₆₅."],
+  "Conway’s Tetratri": ["Conway chained arrows: a→b→c = a↑^{c}b, and longer chains evaluate by repeated rules.", "Conway noted in The Book of Numbers that Graham’s number lies between 3→3→64→2 and 3→3→65→2.", "3→3→3→3 = 3→3→(3→3→2→3)→2, which is larger than 3→3→65→2, so it exceeds Graham’s number."],
+  "Conway’s Tetratet": ["The same chained-arrow construction as Tetratri with 4s: 4→4→4→4.", "The wiki approximates it by the array {4,5,3,2}."],
+  "Gongulus": ["Jonathan Bowers introduced array notation in 2002; it was extended into BEAF with Chris Bird and John Spencer.", "The wiki gives Gongulus as {10,10 (100) 2}: a parenthesised separator in place of the comma.", "Bowers coined the name. I could not confirm its exact evaluation outside the wiki."],
+  "Bird’s number": ["Chris Bird developed array notations and analysed the fast-growing hierarchy.", "The wiki gives this number as one fast-growing function applied several times: f_{ϑ(Ω^ω)+2}(f_{ϑ(Ω^ω)+1}(f_{ϑ(Ω^ω)}(f_{ϑ(Ω^ω)}(7)))).", "I could not find it defined outside the wiki."],
+  "TREE(3)": ["A sequence of trees T₁, T₂, … has each tree with labels from n kinds, tree Tᵢ with at most i vertices, and no tree embedded (as a minor, labels respected) in a later one.", "Kruskal’s tree theorem says such a sequence must end. TREE(n) is the length of the longest, a function Harvey Friedman defined.", "TREE(1) = 1, TREE(2) = 3, and TREE(3) is vastly larger than Graham’s number. The wiki gives only a lower bound."],
+  "SSCG(3)": ["SSCG(k) is the length of the longest sequence of simple subcubic graphs (every vertex has at most three edges) where no graph is a minor of a later one and the nth graph has at most k + n vertices.", "The Robertson–Seymour theorem guarantees it is finite; Harvey Friedman proposed the function.", "Adam Goucher showed that SSCG(3) is larger than TREE applied to itself a vast number of times."],
+  "Loader’s number": ["The 2001 Bignum Bakeoff asked for a C program of 512 characters or fewer that prints the largest number.", "Ralph Loader’s winning program implements a parser, type-checker and interpreter for the Huet–Coquand calculus of constructions and runs over its proofs.", "The wiki defines the output as D^{5}(99), where D(k) collects the typings provable in about log k inference steps.", "It is computable, so the busy beaver function eventually outgrows it."],
+  "Σ(745)": ["A busy beaver number: Σ(n) is the most 1s that an n-state Turing machine can leave on its tape before halting.", "The related BB(n) counts steps: BB(5) = 47,176,870, proved in 2024 by the bbchallenge project.", "Yedidia and Aaronson (2016) built a 7,910-state machine whose halting depends on ZFC being consistent; it was later cut to 748 states. Beyond such sizes, ZFC cannot settle the value.", "The wiki lists Σ(745) as the smallest known one unprovable in ZFC. I could confirm the 748-state result but not the figure 745."],
+  "Σ(1919)": ["Σ(n) is the busy beaver function, as in Σ(745).", "The wiki gives Σ(1919) as an upper bound for the smallest busy beaver number that ZFC cannot prove a value for. I could not confirm it outside the wiki."],
+  "Rayo’s number": ["Rayo(n) is the smallest number bigger than any finite number that a first-order set-theory formula using at most n symbols can name.", "Rayo’s number is Rayo(10^{100}).", "It was the winning entry in a big-number duel at MIT. Its definition is a form of the Berry paradox, made precise by fixing the language."],
+  "BIG FOOT": ["The wiki lists FOOT(10^{100}) under this name and flags it as ill-defined.", "I could not find it defined anywhere outside the wiki."],
+  "Little Bigeddon": ["The wiki lists em(12↑↑12) and flags it as ill-defined.", "I could not find it defined anywhere outside the wiki."],
+  "Sasquatch": ["The wiki lists em₂(12↑↑12), a one-level extension of Little Bigeddon, and flags it as ill-defined.", "I could not find it defined anywhere outside the wiki."],
+  "Hollom’s number": ["Lawrence Hollom invented the iota function, a pseudo-function meant to grow as fast as possible.", "The wiki gives the number as about I(6.895 × 10^{104})(200) and flags it as very ill-defined."],
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  § 2c  WHERE EACH NUMBER SITS ON THE LINE
+//
+//  Scaled mode stitches four scales end to end:
+//    up to a googol    one unit per power of ten (each unit is ×10)
+//    up to 10↑↑12      one tower level ("10 to the power of") = 40 units
+//    up to 10↑↑1,000   the tower's height, on a log scale
+//    beyond            the height of the height, on a log-log scale
+//  The notation-defined numbers after Googolgoogolplex cannot be
+//  compared by size, so they are placed in order only.
+//  A magnitude is {lg: log10 of the value} or {t: [h, v]}, meaning
+//  10^10^…^v with h tens.
+// ═══════════════════════════════════════════════════════════════
+const MAG = {
+  "One": { lg: 0 }, "Ten": { lg: 1 }, "Hundred": { lg: 2 }, "Thousand": { lg: 3 }, "Myriad": { lg: 4 }, "Lakh": { lg: 5 },
+  "Million": { lg: 6 }, "Crore": { lg: 7 }, "Hundred million": { lg: 8 }, "Billion": { lg: 9 }, "Trillion": { lg: 12 },
+  "Quadrillion": { lg: 15 }, "Quintillion": { lg: 18 }, "Sextillion": { lg: 21 }, "Avogadro’s number": { lg: 23.78 },
+  "Septillion": { lg: 24 }, "Octillion": { lg: 27 }, "Nonillion": { lg: 30 }, "Decillion": { lg: 33 },
+  "Undecillion … Novemdecillion": { lg: 48 }, "Vigintillion": { lg: 63 }, "Eddington’s number": { lg: 79.2 }, "Googol": { lg: 100 },
+  "Planck volumes in the universe": { lg: 185.66 }, "Centillion": { lg: 303 }, "Short Infinity": { lg: 308.25 }, "Faxul": { lg: 374.9 },
+  "Googolchime": { lg: 1000 }, "Millillion": { lg: 3003 },
+  "Largest known prime": { lg: 41024319.9 }, "Trialogue": { lg: 1e10 }, "Ballium’s number": { lg: 138732019349.3 }, "3↑↑4": { lg: 3638334640024.1 },
+  "Googolplex": { t: [2, 100] }, "Googolbang": { t: [1, 9.957e101] }, "Kilofaxul": { t: [2, 377.47] }, "Googolplexichime": { t: [2, 1000] },
+  "Tetralogue": { t: [3, 10] }, "First Skewes number": { t: [3, 34] }, "Googolduplex": { t: [3, 100] }, "Megafaxul": { t: [3, 377.47] },
+  "Second Skewes number": { t: [3, 963] }, "Googolduplexichime": { t: [3, 1000] }, "Pentalogue": { t: [4, 10] }, "Poincaré’s number": { t: [4, 13] },
+  "Googoltriplex": { t: [4, 100] }, "Hexalogue": { t: [5, 10] }, "Octalogue": { t: [7, 10] }, "Hexadekalogue": { t: [15, 10] },
+  "Mega": { t: [257, 10] }, "Megalogue": { t: [999999, 10] }, "Tritri": { t: [7.6e12, 10] }, "Googolgoogolplex": { t: [1e100, 10] },
+};
+const slPlain = x => x < 10 ? Math.log10(Math.max(1, x)) : 1 + slPlain(Math.log10(x));
+const slogOf = m => m.t ? m.t[0] + slPlain(m.t[1]) : (m.lg < 1 ? m.lg : 1 + slPlain(m.lg));
+const S_GOOGOL = 1 + slPlain(100), P_TOWER = 100, W_TOWER = 40;
+const P12 = P_TOWER + (12 - S_GOOGOL) * W_TOWER, P3 = P12 + 60 * Math.log10(1e3 / 12);
+function scaledPos(m) {
+  if (m.lg !== undefined && m.lg <= 100) return m.lg;
+  const s = slogOf(m);
+  if (s <= 12) return P_TOWER + (s - S_GOOGOL) * W_TOWER;
+  if (s <= 1e3) return P12 + 60 * Math.log10(s / 12);
+  return P3 + 120 * Math.log10(Math.log10(s) / 3);
+}
+const LAST_SCALED = Math.max(...ENTRIES.filter(e => MAG[e.n]).map(e => scaledPos(MAG[e.n])));
+{
+  let k = 0;
+  ENTRIES.forEach((e, i) => {
+    e.i = i;
+    if (MAG[e.n]) e.pos = scaledPos(MAG[e.n]);
+    else { e.ord = true; e.pos = LAST_SCALED + 40 + k * 35; k++; }
+  });
 }
 
-function Line({ idx, onGo }) {
-  const ref = useRef(null), drag = useRef(false), narrow = useNarrow();
+// ═══════════════════════════════════════════════════════════════
+//  § 4  THE LINE
+//  One row.  The view glides to each card: it zooms so the previous
+//  and next numbers stay in sight, and the vertical line marks the
+//  current one.  In "even" mode every number gets an equal step and
+//  the whole list is shown, with the line moving instead.
+// ═══════════════════════════════════════════════════════════════
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const posOf = (e, even) => (even ? e.i : e.pos);
+const SUPD = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const supNum = n => String(n).split("").map(d => SUPD[d]).join("");
+
+function viewFor(i, even) {
+  if (even) return { c: (N - 1) / 2, w: N / 2 + 1 };
+  const e = ENTRIES[i];
+  const a = i > 0 ? e.pos - ENTRIES[i - 1].pos : 0, b = i < N - 1 ? ENTRIES[i + 1].pos - e.pos : 0;
+  return { c: e.pos, w: clamp(Math.max(a, b) * 2.4, 5, 700) };
+}
+function zoneCaption(c, even) {
+  if (even) return "evenly spaced: one step per number, not to scale";
+  if (c <= 100.5) return "to scale: each step along the line is ×10 (one more digit)";
+  if (c <= P12) return "to scale: each tower level is one more “10 to the power of”";
+  if (c <= LAST_SCALED + 1) return "to scale: the height of the tower, squeezed (logarithmic)";
+  return "from here on, sizes cannot be compared: spaced by order only";
+}
+
+function SlideLine({ idx, even, onGo }) {
+  const box = useRef(null), drag = useRef(null), curView = useRef(null), goal = useRef(null);
+  goal.current = viewFor(idx, even);
+  if (!curView.current) curView.current = goal.current;
+  const [view, setView] = useState(curView.current);
+  const [width, setWidth] = useState(800);
   const [hover, setHover] = useState(null);
-  const W = 1000, PAD = 14, H = 40;
-  const xAt = i => PAD + (i / (N - 1)) * (W - 2 * PAD);
-  const pct = x => `${(x / W) * 100}%`;
-  const idxAt = ev => {
-    const r = ref.current.getBoundingClientRect();
-    const x = ((ev.clientX - r.left) / r.width) * W;
-    return Math.max(0, Math.min(N - 1, Math.round(((x - PAD) / (W - 2 * PAD)) * (N - 1))));
+
+  useEffect(() => {
+    const ro = new ResizeObserver(([en]) => setWidth(en.contentRect.width));
+    ro.observe(box.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // glide toward the goal view (position and zoom both ease in log space)
+  useEffect(() => {
+    let raf, last = performance.now();
+    const step = now => {
+      raf = requestAnimationFrame(step);
+      const dt = Math.min(50, now - last); last = now;
+      if (drag.current && drag.current.moved) return;
+      const c = curView.current, g = goal.current, k = 1 - Math.exp(-dt / 140);
+      const lw = Math.log(c.w) + (Math.log(g.w) - Math.log(c.w)) * k;
+      const nc = c.c + (g.c - c.c) * k;
+      const done = Math.abs(g.c - nc) < 1e-3 * g.w && Math.abs(lw - Math.log(g.w)) < 1e-3;
+      const next = done ? g : { c: nc, w: Math.exp(lw) };
+      if (next.c !== c.c || next.w !== c.w) { curView.current = next; setView(next); }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const X = p => 500 + ((p - view.c) / view.w) * 470;                 // viewBox x
+  const pxPerUnit = (width / 1000) * 470 / view.w;
+  const posAtClientX = cx => {
+    const r = box.current.getBoundingClientRect();
+    return view.c + (((cx - r.left) / r.width) * 1000 - 500) / 470 * view.w;
   };
-  const half = (W - 2 * PAD) / (N - 1) / 2;
+  const nearest = p => {
+    let best = 0, bd = Infinity;
+    ENTRIES.forEach((e, i) => { const d = Math.abs(posOf(e, even) - p); if (d < bd) { bd = d; best = i; } });
+    return best;
+  };
+
+  const down = ev => {
+    box.current.setPointerCapture(ev.pointerId);
+    drag.current = { x: ev.clientX, c: curView.current.c, w: curView.current.w, moved: false };
+  };
+  const move = ev => {
+    const p = posAtClientX(ev.clientX);
+    setHover(nearest(p));
+    const d = drag.current;
+    if (!d) return;
+    if (!d.moved && Math.abs(ev.clientX - d.x) < 4) return;
+    d.moved = true;
+    if (even) { onGo(nearest(p)); return; }
+    const ppu = (width / 1000) * 470 / d.w;
+    const c = d.c - (ev.clientX - d.x) / ppu;
+    curView.current = { c, w: d.w }; setView(curView.current);
+    onGo(nearest(c));
+  };
+  const up = ev => {
+    const d = drag.current; drag.current = null;
+    if (d && !d.moved) {                                                   // a click: pick the nearest tick
+      const i = nearest(posAtClientX(ev.clientX));
+      if (Math.abs(X(posOf(ENTRIES[i], even)) - ((ev.clientX - box.current.getBoundingClientRect().left) / width) * 1000) < 22) onGo(i);
+    }
+  };
+
+  // labels for the current number and its neighbours, kept from overlapping
+  const labels = [];
+  const taken = [];
+  [0, -1, 1, -2, 2].forEach(off => {
+    const i = idx + off;
+    if (i < 0 || i >= N) return;
+    const e = ENTRIES[i], px = (X(posOf(e, even)) / 1000) * width;
+    if (px < 30 || px > width - 30) return;
+    const text = e.n.length > 22 ? e.n.slice(0, 21) + "…" : e.n, w = text.length * 6.3 + 12;
+    if (taken.some(([a, b]) => px - w / 2 < b && px + w / 2 > a)) return;
+    taken.push([px - w / 2, px + w / 2]);
+    labels.push({ i, px, text, on: off === 0 });
+  });
+
+  // axis: powers of ten in the first zone, tower levels in the second
+  const axis = [];
+  if (!even) {
+    const lo = view.c - view.w, hi = view.c + view.w;
+    if (lo < 100) {
+      const raw = 56 / pxPerUnit, step = [1, 2, 5, 10, 20, 50].find(s => s >= raw) || 50;
+      for (let k = Math.max(0, Math.ceil(lo / step) * step); k <= Math.min(100, hi); k += step) axis.push([k, k === 0 ? "1" : "10" + supNum(k)]);
+    }
+    if (hi > P_TOWER && lo < P12) {
+      for (let s = 3; s <= 12; s++) { const p = P_TOWER + (s - S_GOOGOL) * W_TOWER; if (p >= lo && p <= hi) axis.push([p, s === 3 ? "10¹⁰¹⁰" : `10↑↑${s}`]); }
+    }
+  }
+
   return (
-    <div ref={ref} style={{ position: "relative", touchAction: "none", cursor: "pointer", userSelect: "none", paddingTop: 20 }}
-      onPointerDown={ev => { drag.current = true; ev.currentTarget.setPointerCapture(ev.pointerId); onGo(idxAt(ev)); }}
-      onPointerMove={ev => { const i = idxAt(ev); setHover(i); if (drag.current) onGo(i); }}
-      onPointerUp={() => { drag.current = false; }}
-      onPointerLeave={() => setHover(null)}>
-      {CH.map((c, k) => {
-        const x0 = xAt(CH_START[k]) - half, x1 = xAt(CH_END[k]) + half, on = idx >= CH_START[k] && idx <= CH_END[k];
-        return <div key={k} style={{ position: "absolute", top: 2, left: pct((x0 + x1) / 2), transform: "translateX(-50%)", fontSize: 10,
-                                     color: on ? T.outline : "#4b5d73", whiteSpace: "nowrap", pointerEvents: "none" }}>{narrow ? k + 1 : c.short}</div>;
+    <div ref={box} style={{ position: "relative", height: 104, touchAction: "none", cursor: even ? "pointer" : "grab", userSelect: "none" }}
+         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => setHover(null)}>
+      {even && CH.map((c, k) => {
+        const x = (X((CH_START[k] + CH_END[k]) / 2) / 1000) * width;
+        return <div key={k} style={{ position: "absolute", top: 0, left: x, transform: "translateX(-50%)", fontSize: 10, whiteSpace: "nowrap",
+                                     color: idx >= CH_START[k] && idx <= CH_END[k] ? T.outline : "#4b5d73", pointerEvents: "none" }}>{width < 560 ? k + 1 : c.short}</div>;
       })}
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: H, display: "block" }}>
-        {CH.map((c, k) => {
-          const x0 = xAt(CH_START[k]) - half, x1 = xAt(CH_END[k]) + half;
-          return <rect key={k} x={x0} y={0} width={x1 - x0} height={H} fill={k % 2 ? "#0e1828" : "#101c30"} />;
+      {labels.map(l => (
+        <div key={l.i} style={{ position: "absolute", top: even ? 18 : 6, left: l.px, transform: "translateX(-50%)", fontSize: 11, whiteSpace: "nowrap",
+                                color: l.on ? T.outline : "#6b7e96", fontWeight: l.on ? 600 : 400, pointerEvents: "none" }}>{l.text}</div>
+      ))}
+      <svg viewBox="0 0 1000 40" preserveAspectRatio="none" style={{ position: "absolute", left: 0, top: 38, width: "100%", height: 40 }}>
+        {even && CH.map((c, k) => {
+          const x0 = X(CH_START[k] - 0.5), x1 = X(CH_END[k] + 0.5);
+          return <rect key={k} x={x0} y={0} width={x1 - x0} height={40} fill={k % 2 ? "#0e1828" : "#101c30"} />;
         })}
-        <line x1={PAD} x2={W - PAD} y1={H / 2} y2={H / 2} stroke="#1e2d3d" vectorEffect="non-scaling-stroke" />
-        {ENTRIES.map((_, i) => <line key={i} x1={xAt(i)} x2={xAt(i)} y1={H / 2 - 5} y2={H / 2 + 5} stroke={i <= idx ? "#4b6a94" : "#26364a"} vectorEffect="non-scaling-stroke" />)}
-        <line x1={xAt(idx)} x2={xAt(idx)} y1={3} y2={H - 3} stroke={T.accent} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        <line x1={0} x2={1000} y1={20} y2={20} stroke="#1e2d3d" vectorEffect="non-scaling-stroke" />
+        {ENTRIES.map((e, i) => {
+          const x = X(posOf(e, even));
+          if (x < -10 || x > 1010) return null;
+          return <line key={i} x1={x} x2={x} y1={even ? 15 : (i === idx ? 10 : 14)} y2={even ? 25 : (i === idx ? 30 : 26)} stroke={i <= idx ? "#4b6a94" : "#2b3d55"} vectorEffect="non-scaling-stroke" />;
+        })}
+        <line x1={X(posOf(ENTRIES[idx], even))} x2={X(posOf(ENTRIES[idx], even))} y1={2} y2={38} stroke={T.accent} strokeWidth={2} vectorEffect="non-scaling-stroke" />
       </svg>
-      {hover !== null && hover !== idx && (
-        <div style={{ position: "absolute", bottom: "100%", left: pct(xAt(hover)), transform: "translate(-50%,-2px)",
-                      background: "#0e1828", border: "1px solid #1e2d3d", borderRadius: 6, padding: "2px 8px", fontSize: 10,
-                      color: "#cbd5e1", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5 }}>{ENTRIES[hover].n}</div>
+      {axis.map(([p, text], k) => (
+        <div key={k} style={{ position: "absolute", top: 80, left: `${X(p) / 10}%`, transform: "translateX(-50%)", fontSize: 9.5, color: "#4b5d73", whiteSpace: "nowrap", pointerEvents: "none" }}>{text}</div>
+      ))}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, textAlign: "center", fontSize: 10, color: "#4b5d73", pointerEvents: "none" }}>{zoneCaption(view.c, even)}</div>
+      {hover !== null && hover !== idx && !drag.current && (
+        <div style={{ position: "absolute", top: 24, left: `${X(posOf(ENTRIES[hover], even)) / 10}%`, transform: "translate(-50%,-100%)",
+                      background: "#0e1828", border: "1px solid #1e2d3d", borderRadius: 6, padding: "2px 8px", fontSize: 10, color: "#cbd5e1",
+                      whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5 }}>{ENTRIES[hover].n}</div>
       )}
     </div>
   );
@@ -276,14 +616,43 @@ const fromHash = () => {
   const i = ENTRIES.findIndex(e => e.id === location.hash.slice(1));
   return i >= 0 ? i : 0;
 };
+const ONE_LINE = { display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+
+function Options({ even, setEven, onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+      <div style={{ position: "absolute", top: 40, right: 0, zIndex: 50, width: 280, background: "#0e1828", border: `1px solid ${T.a(62, 0.25)}`,
+                    borderRadius: 12, padding: 12, boxShadow: "0 12px 40px rgba(0,0,0,.6)" }}>
+        <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73", marginBottom: 8 }}>Options</div>
+        <button onClick={() => setEven(!even)} style={{ display: "flex", alignItems: "flex-start", gap: 10, width: "100%", background: "transparent", border: "none",
+                                                      color: "#cbd5e1", cursor: "pointer", textAlign: "left", padding: 0, fontSize: 12 }}>
+          <span style={{ width: 30, height: 16, borderRadius: 8, position: "relative", flexShrink: 0, marginTop: 2, background: even ? T.cell : "#1e293b", transition: "background .2s" }}>
+            <span style={{ position: "absolute", top: 2, left: even ? 16 : 2, width: 12, height: 12, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+          </span>
+          <span>Space the numbers evenly
+            <span style={{ display: "block", fontSize: 10, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>
+              Off (default): the line is to scale, and slides to where each number really sits. On: every number gets an equal step.
+            </span>
+          </span>
+        </button>
+      </div>
+    </>
+  );
+}
 
 function App() {
   const [idx, setIdx] = useState(fromHash);
   const [playing, setPlaying] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [even, setEvenState] = useState(() => { try { return localStorage.getItem("nl-even") === "1"; } catch (_) { return false; } });
+  const setEven = v => { setEvenState(v); try { localStorage.setItem("nl-even", v ? "1" : "0"); } catch (_) { /* private mode */ } };
   const e = ENTRIES[idx], next = ENTRIES[idx + 1], ch = CH[e.c];
+  const srcs = (SRC[e.n] || []).map(k => LINKS[k]);
+  const steps = DEF[e.n] || [];
 
   const go = (i, keepPlaying) => {
-    setIdx(Math.max(0, Math.min(N - 1, i)));
+    setIdx(clamp(i, 0, N - 1));
     if (!keepPlaying) setPlaying(false);
   };
   const prevChapter = () => go(idx > CH_START[e.c] ? CH_START[e.c] : Math.max(0, CH_START[Math.max(0, e.c - 1)]));
@@ -297,10 +666,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (!playing) return;
-    const t = setInterval(() => setIdx(i => {
-      if (i >= N - 1) { setPlaying(false); return i; }
-      return i + 1;
-    }), 2600);
+    const t = setInterval(() => setIdx(i => { if (i >= N - 1) { setPlaying(false); return i; } return i + 1; }), 2800);
     return () => clearInterval(t);
   }, [playing]);
   useEffect(() => {
@@ -319,106 +685,110 @@ function App() {
 
   const len = e.v.replace(/[\^{}]/g, "").length;
   const fs = len <= 9 ? 52 : len <= 16 ? 40 : len <= 24 ? 30 : 24;
-  const strip = [idx - 2, idx - 1, idx, idx + 1, idx + 2].filter(i => i >= 0 && i < N);
+  const W = "min(880px,100%)";
+  const label = { display: "block", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: T.outline, marginBottom: 4 };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a1020", color: "#e2e8f0", fontFamily: FONT,
                   display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 16px 32px" }}>
       <EdgeArrow page={PAGES[1]} side="left" />
 
-      <div style={{ width: "min(880px,100%)", display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ width: W, display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap", position: "relative" }}>
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: T.outline }}>The Number Line</div>
-          <div style={{ fontSize: 9, color: "#4b5d73", marginTop: 2, letterSpacing: "0.09em", textTransform: "uppercase" }}>
-            a walk up the googology wiki’s list of numbers
-          </div>
+          <div style={{ fontSize: 9, color: "#4b5d73", marginTop: 2, letterSpacing: "0.09em", textTransform: "uppercase" }}>a walk up the googology wiki’s list of numbers</div>
         </div>
         <PageSwitch current={2} />
+        <button className="btn" onClick={() => setMenu(m => !m)} title="Options" style={{ fontSize: 15, padding: "3px 10px", position: "relative", zIndex: 60 }}>⚙</button>
+        {menu && <Options even={even} setEven={setEven} onClose={() => setMenu(false)} />}
       </div>
 
-      {/* chapters: jump a whole stretch at once */}
-      <div className="chips" style={{ width: "min(880px,100%)", marginBottom: 12 }}>
+      {/* chapters */}
+      <div className="chips" style={{ width: W, marginBottom: 6 }}>
         {CH.map((c, k) => (
           <button key={k} className="btn" onClick={() => go(CH_START[k])} style={{
-            whiteSpace: "nowrap", flexShrink: 0,
-            background: k === e.c ? T.cell : "#0e1828", color: k === e.c ? "#fff" : "#94a3b8",
-            borderColor: k === e.c ? T.outline : "#1e2d3d",
-          }}>{k + 1} · {c.name}</button>
+            whiteSpace: "nowrap", flexShrink: 0, background: k === e.c ? T.cell : "#0e1828", color: k === e.c ? "#fff" : "#94a3b8",
+            borderColor: k === e.c ? T.outline : "#1e2d3d" }}>{k + 1} · {c.name}</button>
         ))}
       </div>
 
-      {/* the number */}
-      <div key={e.id} className="flip" style={{ width: "min(880px,100%)", background: "#0e1828", border: "1px solid #16233a", borderRadius: 16, padding: "18px 20px 14px" }}>
+      {/* the line, then the controls: both keep a fixed size so nothing below them shifts the buttons */}
+      <div style={{ width: W }}><SlideLine idx={idx} even={even} onGo={i => go(i)} /></div>
+
+      <div style={{ width: W, display: "flex", gap: 6, height: 52, margin: "4px 0 12px" }}>
+        <button className="btn" onClick={prevChapter} disabled={idx === 0} title="skip back a chapter" style={{ width: 46 }}>⟪ …</button>
+        <button className="btn" onClick={() => go(idx - 1)} disabled={idx === 0} title="previous number" style={{ width: 40, fontSize: 16 }}>‹</button>
+        {next ? (
+          <a className="next" href={"#" + next.id} onClick={ev => { ev.preventDefault(); go(idx + 1); }}
+             style={{ flex: 1, minWidth: 0, height: 52, padding: "0 14px", background: T.a(40, 0.2), border: `1px solid ${T.a(62, 0.35)}`, color: "#e2e8f0" }}>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ ...ONE_LINE, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748b" }}>
+                next{next.c !== e.c ? ` · chapter ${next.c + 1}` : ""}
+              </span>
+              <span style={{ ...ONE_LINE, fontSize: 13, color: T.outline, marginTop: 2 }}>
+                {next.n}<span style={{ color: "#94a3b8" }}>{next.j ? ` · ${next.j}` : ""}</span>
+              </span>
+            </span>
+            <span style={{ fontSize: 22, color: T.outline }}>→</span>
+          </a>
+        ) : (
+          <a className="next" href={"#" + ENTRIES[0].id} onClick={ev => { ev.preventDefault(); go(0); }}
+             style={{ flex: 1, minWidth: 0, height: 52, padding: "0 14px", background: T.a(40, 0.2), border: `1px solid ${T.a(62, 0.35)}`, color: T.outline, justifyContent: "space-between" }}>
+            <span style={{ ...ONE_LINE, fontSize: 13 }}>End of the list. Start again from One</span><span style={{ fontSize: 20 }}>↺</span>
+          </a>
+        )}
+        <button className="btn" onClick={() => setPlaying(p => !p)} title="play the journey (P)" style={{ width: 40, color: playing ? "#fff" : "#94a3b8", background: playing ? T.cell : "#0e1828" }}>{playing ? "❚❚" : "▶"}</button>
+        <button className="btn" onClick={nextChapter} disabled={idx === N - 1} title="skip ahead a chapter" style={{ width: 46 }}>… ⟫</button>
+      </div>
+
+      {/* the card */}
+      <div key={e.id} className="flip" style={{ width: W, background: "#0e1828", border: "1px solid #16233a", borderRadius: 16, padding: "18px 20px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 10, color: "#64748b", marginBottom: 6 }}>
           <span style={{ color: T.outline }}>{ch.name}</span><span>·</span><span>{idx + 1} of {N}</span>
           {e.x && <><span>·</span><span style={{ color: "#c08a4a" }}>{e.x}</span></>}
+          {e.ord && !even && <><span>·</span><span style={{ color: "#c08a4a" }}>placed by order only</span></>}
         </div>
         {e.v !== e.n && <div style={{ fontFamily: DISP, fontSize: 20, color: T.outline }}>{e.n}</div>}
         <div style={{ fontFamily: DISP, fontSize: fs, color: e.v === e.n ? T.outline : "#f1f5f9", margin: "4px 0 2px", lineHeight: 1.15, overflowWrap: "anywhere" }}><Val s={e.v} /></div>
         {e.a && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 2 }}><Val s={e.a} /></div>}
         <div style={{ fontSize: 12.5, color: "#a5b4c8", lineHeight: 1.65, marginTop: 10, maxWidth: 680 }}><Val s={e.t} /></div>
+
+        {steps.length > 0 && (
+          <div style={{ marginTop: 14, maxWidth: 680 }}>
+            <span style={label}>how it is defined</span>
+            <ol style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: "#b6c3d4", lineHeight: 1.7 }}>
+              {steps.map((st, k) => <li key={k} style={{ marginBottom: 3 }}><Val s={st} /></li>)}
+            </ol>
+          </div>
+        )}
         {e.s && (
-          <div style={{ marginTop: 12, padding: "8px 12px", borderLeft: `2px solid ${T.outline}`, background: T.a(40, 0.12), borderRadius: "0 8px 8px 0", maxWidth: 680 }}>
-            <span style={{ display: "block", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: T.outline, marginBottom: 2 }}>to get a feel for it</span>
+          <div style={{ marginTop: 14, padding: "8px 12px", borderLeft: `2px solid ${T.outline}`, background: T.a(40, 0.12), borderRadius: "0 8px 8px 0", maxWidth: 680 }}>
+            <span style={{ ...label, marginBottom: 2 }}>to get a feel for it</span>
             <span style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.6 }}>{e.s}</span>
           </div>
         )}
-        {e.l && <a href={e.l[0]} style={{ display: "inline-block", marginTop: 10, fontSize: 11, color: T.outline, textDecoration: "none", border: `1px solid ${T.a(62, 0.3)}`, borderRadius: 8, padding: "4px 10px" }}>▦ {e.l[1]} →</a>}
+        {e.l && <a href={e.l[0]} style={{ display: "inline-block", marginTop: 12, fontSize: 11, color: T.outline, textDecoration: "none", border: `1px solid ${T.a(62, 0.3)}`, borderRadius: 8, padding: "4px 10px" }}>▦ {e.l[1]} →</a>}
 
-        {/* link to the next number */}
-        {next ? (
-          <a className="next" href={"#" + next.id} onClick={ev => { ev.preventDefault(); go(idx + 1); }}
-             style={{ marginTop: 16, background: T.a(40, 0.2), border: `1px solid ${T.a(62, 0.35)}`, color: "#e2e8f0" }}>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748b" }}>
-                next{next.c !== e.c ? ` · chapter ${next.c + 1}: ${CH[next.c].name}` : ""}
-              </span>
-              <span style={{ display: "block", fontFamily: DISP, fontSize: 19, color: T.outline, marginTop: 2 }}>
-                {next.n}{next.v !== next.n && <span style={{ fontSize: 14, color: "#cbd5e1" }}> <Val s={next.v} /></span>}
-              </span>
-              <span style={{ display: "block", fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{next.j}</span>
-            </span>
-            <span style={{ fontSize: 26, color: T.outline }}>→</span>
-          </a>
-        ) : (
-          <a className="next" href={"#" + ENTRIES[0].id} onClick={ev => { ev.preventDefault(); go(0); }}
-             style={{ marginTop: 16, background: T.a(40, 0.2), border: `1px solid ${T.a(62, 0.35)}`, color: T.outline, justifyContent: "space-between" }}>
-            <span>That is the end of the wiki’s list. Start again from One</span><span style={{ fontSize: 22 }}>↺</span>
-          </a>
-        )}
+        <div style={{ marginTop: 14, fontSize: 10.5, color: "#64748b", lineHeight: 1.8 }}>
+          <span style={{ ...label, color: "#4b5d73", marginBottom: 2 }}>sources</span>
+          {srcs.map(([text, url], k) => (
+            <span key={k}>{k > 0 && " · "}<a href={url} target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>{text}</a></span>
+          ))}
+          {srcs.length > 0 && " · "}
+          <a href={LINKS.wiki[1]} target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>{LINKS.wiki[0]}</a>
+          {srcs.length === 0 && ENTRIES[idx].c !== 0 && <span style={{ display: "block", color: "#7d6a4a" }}>Only the Googology Wiki lists this one; I found no independent source.</span>}
+        </div>
       </div>
 
-      {/* skip around: “…” jumps to the neighbouring chapter */}
-      <div style={{ width: "min(880px,100%)", display: "flex", alignItems: "center", gap: 6, margin: "12px 0 8px", flexWrap: "wrap" }}>
-        <button className="btn" onClick={prevChapter} disabled={idx === 0} title="skip back a chapter" style={{ flexShrink: 0 }}>⟪ …</button>
-        {strip.map(i => (
-          <button key={i} className="btn" onClick={() => go(i)} disabled={i === idx} style={{
-            whiteSpace: "nowrap", flexShrink: 0,
-            background: i === idx ? "transparent" : "#0e1828", color: i === idx ? T.outline : "#94a3b8",
-            borderColor: i === idx ? T.a(62, 0.5) : "#1e2d3d", opacity: 1,
-          }}>{ENTRIES[i].n}</button>
-        ))}
-        <button className="btn" onClick={nextChapter} disabled={idx === N - 1} title="skip ahead a chapter" style={{ flexShrink: 0 }}>… ⟫</button>
-        <span style={{ flex: 1 }} />
-        <button className="btn" onClick={() => setPlaying(p => !p)} style={{ flexShrink: 0, color: playing ? "#fff" : "#94a3b8", background: playing ? T.cell : "#0e1828" }}>
-          {playing ? "❚❚ pause" : "▶ play the journey"}
-        </button>
+      <div style={{ width: W, marginTop: 8, fontSize: 10, color: "#4b5d73", lineHeight: 1.7 }}>
+        {ch.blurb} Drag the line, press → or Space for the next number, Shift + → for the next chapter, P to play.
       </div>
-
-      {/* the line */}
-      <div style={{ width: "min(880px,100%)", marginTop: 10 }}>
-        <Line idx={idx} onGo={i => go(i)} />
-      </div>
-
-      <div style={{ width: "min(880px,100%)", marginTop: 6, fontSize: 10, color: "#4b5d73", lineHeight: 1.7 }}>
-        {ch.blurb} Drag along the line, press → or Space for the next number, Shift + → for the next chapter, P to play.
-      </div>
-
-      <div style={{ width: "min(880px,100%)", marginTop: 14, fontSize: 10, color: "#4b5d73", lineHeight: 1.7, borderTop: "1px solid #16233a", paddingTop: 10 }}>
+      <div style={{ width: W, marginTop: 12, fontSize: 10, color: "#4b5d73", lineHeight: 1.7, borderTop: "1px solid #16233a", paddingTop: 10 }}>
         Names, values and order follow the Googology Wiki’s “List of numbers”,
-        {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>.
-        It selects the notable entries of each class from a far longer list. The line is not to scale: each tick is one entry, and the numbers become incomparably larger toward the right.
-        Names are conventions, so “billion” and “trillion” differ between countries, and the wiki flags some entries as ill-defined. Comparisons use rounded, commonly cited estimates.
+        {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>,
+        a selection of the notable entries from a far longer list. Definitions, dates and comparisons are checked against the outside sources listed on each card.
+        Where I could only find a number on the wiki, the card says so. Names are conventions (“billion” and “trillion” differ between countries), and the wiki flags some entries as ill-defined.
+        Comparisons use rounded, commonly cited estimates.
       </div>
     </div>
   );
