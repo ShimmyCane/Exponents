@@ -800,28 +800,6 @@ const SERIES = [
   { href: null,           label: "Number line", tag: "coming soon" },
 ];
 
-function SeriesNav({ current, color, line }) {
-  return (
-    <nav style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 12, fontFamily: FONT, fontSize: 11 }}>
-      {SERIES.map((p, i) => {
-        const on = i === current;
-        const st = {
-          display: "inline-flex", gap: 6, alignItems: "center", padding: "5px 12px", borderRadius: 16, textDecoration: "none",
-          border: `1px solid ${on ? color : p.href ? line : "#1e2d3d"}`, background: on ? color : "transparent",
-          color: on ? "#0a1020" : p.href ? color : "#4b5d73", fontWeight: on ? 600 : 400,
-        };
-        const body = <><span style={{ opacity: 0.6 }}>{i + 1}</span>{p.label}<span style={{ opacity: 0.55 }}>{p.tag}</span></>;
-        return (
-          <React.Fragment key={i}>
-            {i > 0 && <span style={{ color: "#33475e" }}>→</span>}
-            {p.href && !on ? <a href={p.href} className="series" style={st}>{body}</a> : <span style={st}>{body}</span>}
-          </React.Fragment>
-        );
-      })}
-    </nav>
-  );
-}
-
 function EdgeArrows({ current, color }) {
   const arrow = (p, side) => {
     if (!p) return null;
@@ -965,7 +943,6 @@ function App() {
         {menu && <SettingsMenu theme={theme} opts={opts} setOpts={setOpts} speed={speed} setSpeed={setSpeed} onClose={() => setMenu(false)} />}
       </div>
 
-      <SeriesNav current={0} color={theme.outline} line={theme.a("accent", 0.35)} />
       <EdgeArrows current={0} color={theme.outline} />
 
       {/* Base tabs */}

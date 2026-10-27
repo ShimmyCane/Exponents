@@ -49,7 +49,8 @@ const CFG = {
   N_MAX: { 1: 60, 2: 10, 3: 5 },     // per arrow count
   EXACT_DIGITS: 20000,               // compute exactly (BigInt) up to this many digits
   TOWER_SHOW: 9,                     // levels drawn before the tower trails off
-  SL_MAX: 6.5,                       // right edge of the super-log ruler
+  SL_MAX: 12,                        // right edge of the super-log ruler
+  RULER_W: 2000,                     // px width; the ruler scrolls sideways
   BASE_HUES: [0, 0, 213, 159, 265, 25, 340, 50, 185, 300],
   EXP_MAX_DIGITS: 15, EXP_CAP: 40,   // mirrors index.html, for deep links
 };
@@ -217,8 +218,12 @@ const LANDMARKS = [
   { name: "googol",          r: { h: 1, v: 100 } },
   { name: "googolplex",      r: { h: 2, v: 100 } },
   { name: "googolplexian",   r: { h: 3, v: 100 } },
+  { name: "Skewes' number",  r: { h: 3, v: 34 } },
+  { name: "BB(5)",           r: { h: 0, v: 47176870 } },
   { name: "10↑↑5",           r: norm({ h: 4, v: 10 }) },
   { name: "10↑↑6",           r: norm({ h: 5, v: 10 }) },
+  { name: "10↑↑7",           r: norm({ h: 6, v: 10 }) },
+  { name: "10↑↑8",           r: norm({ h: 7, v: 10 }) },
 ].map(l => ({ ...l, sl: slRep(l.r) }));
 
 function compare(rep) {
@@ -281,12 +286,12 @@ function Tower({ a, levels, more, theme, height }) {
 //  § 6  SUPER-LOG RULER
 // ═══════════════════════════════════════════════════════════════
 function Ruler({ steps, theme }) {
-  const W = 1000, X = sl => 30 + (Math.min(sl, CFG.SL_MAX) / CFG.SL_MAX) * 940;
+  const W = CFG.RULER_W, X = sl => 40 + (Math.min(sl, CFG.SL_MAX) / CFG.SL_MAX) * (W - 80);
   const rows = [0, 1, 2];
   const cur = steps[steps.length - 1], curSl = slRep(cur.rep);
   return (
-    <svg viewBox={`0 0 ${W} 150`} style={{ width: "100%", display: "block" }}>
-      <line x1={30} x2={970} y1={70} y2={70} stroke="#1e2d3d" strokeWidth={2} />
+    <svg width={W} height={150} style={{ display: "block" }}>
+      <line x1={40} x2={W - 40} y1={70} y2={70} stroke="#1e2d3d" strokeWidth={2} />
       {Array.from({ length: Math.floor(CFG.SL_MAX) + 1 }, (_, t) => (
         <g key={t}>
           <line x1={X(t)} x2={X(t)} y1={62} y2={78} stroke="#33475e" strokeWidth={1.5} />
@@ -322,9 +327,23 @@ function Ruler({ steps, theme }) {
         </text>
       </g>
       <text x={30} y={142} fill="#33475e" fontSize={10} fontFamily={FONT}>
-        super-log scale · every tick is one more “10 to the power of”
+        super-log scale · every tick is one more “10 to the power of” · scroll sideways →¹
       </text>
     </svg>
+  );
+}
+
+// Numbers that grow faster than any tower in the ruler: they sit past its right edge.
+const BEYOND = ["Graham's number", "TREE(3)", "SSCG(3)", "Rayo's number"];
+function RulerFooter() {
+  return (
+    <div style={{ marginTop: 10, fontFamily: FONT, fontSize: 10, color: "#4b5d73", lineHeight: 1.6 }}>
+      <span style={{ color: "#64748b" }}>Beyond the right edge →</span> {BEYOND.join(" · ")}
+      <div style={{ marginTop: 6, color: "#334155" }}>
+        ¹ Extremes follow the Googology Wiki’s “List of numbers”, <a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>.
+        Exact values for the beyond group are not representable on this ruler.
+      </div>
+    </div>
   );
 }
 
@@ -338,28 +357,6 @@ const SERIES = [
   { href: "uparrow.html", label: "Up-arrows",   tag: "a↑↑n" },
   { href: null,           label: "Number line", tag: "coming soon" },
 ];
-
-function SeriesNav({ current, color, line }) {
-  return (
-    <nav style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 12, fontFamily: FONT, fontSize: 11 }}>
-      {SERIES.map((p, i) => {
-        const on = i === current;
-        const st = {
-          display: "inline-flex", gap: 6, alignItems: "center", padding: "5px 12px", borderRadius: 16, textDecoration: "none",
-          border: `1px solid ${on ? color : p.href ? line : "#1e2d3d"}`, background: on ? color : "transparent",
-          color: on ? "#0a1020" : p.href ? color : "#4b5d73", fontWeight: on ? 600 : 400,
-        };
-        const body = <><span style={{ opacity: 0.6 }}>{i + 1}</span>{p.label}<span style={{ opacity: 0.55 }}>{p.tag}</span></>;
-        return (
-          <React.Fragment key={i}>
-            {i > 0 && <span style={{ color: "#33475e" }}>→</span>}
-            {p.href && !on ? <a href={p.href} className="series" style={st}>{body}</a> : <span style={st}>{body}</span>}
-          </React.Fragment>
-        );
-      })}
-    </nav>
-  );
-}
 
 function EdgeArrows({ current, color }) {
   const arrow = (p, side) => {
@@ -509,7 +506,6 @@ function App() {
         <a href={`index.html?base=${a}`} className="tool" style={{ color: theme.outline, border: `1px solid ${theme.a(75, 62, 0.3)}` }}>← exponents</a>
       </div>
 
-      <SeriesNav current={1} color={theme.outline} line={theme.a(75, 62, 0.35)} />
       <EdgeArrows current={1} color={theme.outline} />
 
       {/* Controls */}
@@ -572,7 +568,10 @@ function App() {
 
       {/* Ruler */}
       <div style={{ width: "min(880px,100%)", background: "#0e1828", borderRadius: 12, padding: "8px 10px", border: `1px solid ${theme.a(75, 62, 0.15)}`, marginBottom: 12 }}>
-        <Ruler steps={steps} theme={theme} />
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <Ruler steps={steps} theme={theme} />
+        </div>
+        <RulerFooter />
       </div>
 
       {/* Steps + facts */}
