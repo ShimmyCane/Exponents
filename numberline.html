@@ -31,7 +31,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 
 const FONT = "'DM Mono', monospace";
 const DISP = "'DM Serif Display', serif";
@@ -68,24 +68,33 @@ const ENTRIES = [
   E(0, "Ten", "10", "×10", "The base of our number system: ten fingers, ten digits.", { s: "Ten fingers on two hands." }),
   E(0, "Hundred", "100", "×10", "Ten tens, or 10^{2}. You can still hold this in your head.", { s: "A century is a hundred years.", l: ["index.html?base=10&exp=2", "see 10² as a field of cells"] }),
   E(0, "Thousand", "1,000", "×10", "The wiki also lists it as Killion. From here, the short scale gives a new name to every ×1,000.", { s: "A thousand steps is about a ten-minute walk.", l: ["index.html?base=10&exp=3", "see 10³ as a field of cells"] }),
-  E(0, "Myriad", "10,000", "×10", "The Greek word for ten thousand. East Asian languages still count in units of it.", { s: "The popular 10,000-steps-a-day goal is about 8 kilometres of walking." }),
-  E(0, "Lakh", "100,000", "×10", "The Indian numbering system has a word for this. Ten million is a crore.", { s: "A person has roughly 100,000 hairs on their head." }),
+  E(0, "Myriad", "10,000", "×10", "The Greek word for ten thousand. East Asian languages still count in units of it.", { egg: true, s: "The popular 10,000-steps-a-day goal is about 8 kilometres of walking." }),
+  E(0, "Lakh", "100,000", "×10", "The Indian numbering system has a word for this. Ten million is a crore.", { egg: true, s: "A person has roughly 100,000 hairs on their head." }),
   E(0, "Million", "1,000,000", "×10", "A thousand thousands. The wiki’s second class starts here.", { s: "A million seconds is about 11.6 days.", l: ["index.html?base=10&exp=6", "see 10⁶ as a field of cells"] }),
-  E(0, "Crore", "10,000,000", "×10", "Ten million, in the Indian system. The wiki also calls it Pipsqueak.", { s: "Ten million seconds is about 116 days, nearly four months." }),
+  E(0, "Crore", "10,000,000", "×10", "Ten million, in the Indian system. The wiki also calls it Pipsqueak.", { egg: true, s: "Ten million seconds is about 116 days, nearly four months." }),
   E(0, "Hundred million", "100,000,000", "×10", "The wiki calls it Myllion. Nine digits are still all you need.", { s: "A hundred million seconds is about 3.2 years." }),
   // 1 · Names: the short scale, one name per ×1,000
-  E(1, "Billion", "10^{9}", "×10", "In the short scale, which most English speakers use. The older long scale used billion for 10¹².", { a: "1,000,000,000", s: "A billion seconds is about 31.7 years. The Earth has about 8 billion people.", l: ["index.html?base=10&exp=9", "see 10⁹ as a field of cells"] }),
-  E(1, "Trillion", "10^{12}", "×1,000", "A thousand billions.", { a: "1,000,000,000,000", s: "A trillion seconds is about 31,700 years, back to the age of the oldest cave art. Light travels about 9.5 trillion kilometres in a year." }),
+  E(1, "Billion", "10^{9}", "×10", "In the short scale, which Americans and most English speakers use.", { eg: "In the long scale (continental Europe, older British usage) a billion is 10¹², and 10⁹ is called a milliard.", a: "1,000,000,000", s: "A billion seconds is about 31.7 years. The Earth has about 8 billion people.", l: ["index.html?base=10&exp=9", "see 10⁹ as a field of cells"] }),
+  E(1, "Kharab", "10^{11}", "", "In the traditional Indian system: a hundred arab. (An arab, 10⁹, is a short-scale billion.)", { egg: true, a: "100,000,000,000" }),
+  E(1, "Trillion", "10^{12}", "×1,000", "A thousand billions.", { eg: "In the long scale a trillion is 10¹⁸.", a: "1,000,000,000,000", s: "A trillion seconds is about 31,700 years, back to the age of the oldest cave art. Light travels about 9.5 trillion kilometres in a year." }),
+  E(1, "Neel", "10^{13}", "", "A hundred kharab in the traditional Indian system. Also spelled nil.", { egg: true }),
   E(1, "Quadrillion", "10^{15}", "×1,000", "A thousand trillions.", { s: "A quadrillion seconds is about 31.7 million years. Ants on Earth are estimated at around 20 quadrillion.", l: ["index.html?base=10&exp=15", "see 10¹⁵ as a field of cells"] }),
+  E(1, "Padma", "10^{15}", "", "A hundred neel: the same size as a quadrillion.", { egg: true }),
+  E(1, "Shankh", "10^{17}", "", "A hundred padma.", { egg: true }),
   E(1, "Quintillion", "10^{18}", "×1,000", "A quintillion seconds is about 31.7 billion years: more than twice the age of the universe.", { s: "The Milky Way is about a quintillion kilometres across, roughly 100,000 light-years." }),
   E(1, "Sextillion", "10^{21}", "×1,000", "The names are Latin: sex- means six, and each -illion is another thousand.", { s: "The Earth weighs about 6 sextillion tonnes." }),
   E(1, "Avogadro’s number", "6.022 × 10^{23}", "about ×600", "How many particles make a mole: the atoms in 12 grams of carbon-12. A number chemists really use.", { s: "A teaspoon of water holds roughly 2 × 10²³ molecules." }),
   E(1, "Septillion", "10^{24}", "about ×1.7", "A thousand sextillions.", { s: "Estimates of the stars in the observable universe run from about 10²² up to 10²⁴: as many as a septillion." }),
   E(1, "Octillion", "10^{27}", "×1,000", "A thousand septillions.", { s: "A 70-kilogram adult is made of about 7 × 10²⁷ atoms, around seven octillion." }),
+  E(1, "Jō (穣)", "10^{28}", "", "Japanese numbers group by ten thousand: man 10⁴, oku 10⁸, chō 10¹², kei 10¹⁶, gai 10²⁰, jo 10²⁴, then jō 10²⁸.", { egg: true }),
   E(1, "Nonillion", "10^{30}", "×1,000", "Spelled with an ‘i’: nonillion. Nine, in Latin, plus the same -illion.", { s: "The Sun weighs about 2 nonillion kilograms. Earth’s bacteria and archaea number around 5 nonillion." }),
   E(1, "Decillion", "10^{33}", "×1,000", "Ten, in Latin: the tenth step of the short-scale names.", { s: "Counted in grams, the Sun weighs about 2 decillion." }),
+  E(1, "Sai (載)", "10^{44}", "", "In the same Japanese system: kō 10³², kan 10³⁶, sei 10⁴⁰, sai 10⁴⁴, then goku 10⁴⁸.", { egg: true }),
   E(1, "Undecillion … Novemdecillion", "10^{36} … 10^{60}", "nine more names, each ×1,000", "Undecillion, duodecillion, tredecillion, quattuordecillion, quindecillion, sexdecillion, septendecillion, octodecillion, novemdecillion. The names keep going; the wiki lists them all.", { s: "Counted in kilograms, the Milky Way weighs about 2 × 10⁴² (roughly 1.15 trillion Suns, mostly dark matter): a couple of tredecillion." }),
+  E(1, "Nayuta (那由他)", "10^{60}", "", "A name from the traditional, Buddhist-influenced Japanese list. The wiki gives it as 10⁶⁰.", { egg: true }),
   E(1, "Vigintillion", "10^{63}", "×1,000", "Twenty, in Latin: the twentieth name in the short scale.", { s: "The observable universe is about 5 × 10⁶¹ Planck lengths across, around a twentieth of a vigintillion." }),
+  E(1, "Fukashigi (不可思議)", "10^{64}", "", "It means “inconceivable”. The wiki gives it as 10⁶⁴.", { egg: true }),
+  E(1, "Muryōtaisū (無量大数)", "10^{68}", "", "It means “immeasurably large number”, the last name in the traditional Japanese list. The wiki gives it as 10⁶⁸.", { egg: true }),
   E(1, "Eddington’s number", "1.57 × 10^{79}", "about ×10¹⁶", "Arthur Eddington’s estimate of the protons in the observable universe: 136 × 2²⁵⁶.", { s: "About as many as the atoms in the whole observable universe." }),
   E(1, "Googol", "10^{100}", "about ×6 × 10²⁰", "A 1 followed by 100 zeros. Coined by nine-year-old Milton Sirotta, nephew of the mathematician Edward Kasner, who popularised it in 1940.", { s: "A googol is 10²⁰ times more than the atoms in the observable universe (about 10⁸⁰)." }),
   E(1, "Planck volumes in the universe", "4.6 × 10^{185}", "about ×4.6 × 10⁸⁵", "Roughly how many Planck volumes, the smallest volume that means anything in physics, fit in the observable universe.", { s: "Fill the whole visible universe with the tiniest cells physics allows and you have only about 10¹⁸⁵ of them: still fewer than a googol squared." }),
@@ -286,6 +295,16 @@ const LINKS = {
   xkcdB:    ["The Clarkkkkson vs. the xkcd number (xkcd blog)", "https://blog.xkcd.com/2007/01/11/the-clarkkkkson-vs-the-xkcd-number/"],
   xkcdW:    ["xkcd number (Googology Wiki)", "https://googology.fandom.com/wiki/Xkcd_number"],
   hollom:   ["Lawrence Hollom (Googology Wiki)", "https://googology.fandom.com/wiki/Lawrence_Hollom"],
+  japanese: ["Japanese numerals (Wikipedia)", "https://en.wikipedia.org/wiki/Japanese_numerals"],
+  bipm:     ["New SI prefixes: ronna, quetta, ronto, quecto (BIPM, 2022)", "https://www.bipm.org/en/-/2022-12-19-si-prefixes"],
+  nano:     ["Size of the nanoscale (National Nanotechnology Initiative)", "https://www.nano.gov/nanotech-101/what/nano-size"],
+  nanoHow:  ["Just how small is “nano”? (National Nanotechnology Initiative)", "https://www.nano.gov/about-nanotechnology/just-how-small-is-nano"],
+  zepto:    ["Meet the zeptosecond (Live Science)", "https://www.livescience.com/zeptosecond-shortest-time-unit-measured.html"],
+  nobel:    ["Nobel Prize in Physics 2023", "https://www.nobelprize.org/prizes/physics/2023/summary/"],
+  proton:   ["The proton radius and its relatives (arXiv)", "https://arxiv.org/pdf/2211.05419"],
+  codata:   ["Fundamental Physical Constants (NIST)", "https://physics.nist.gov/cuu/Constants/"],
+  surreal:  ["Surreal numbers (cut-the-knot)", "https://www.cut-the-knot.org/WhatIs/Infinity/SurrealNumbers.shtml"],
+  surrealA: ["Analysis on surreal numbers (arXiv)", "https://arxiv.org/pdf/1307.7392"],
 };
 
 const SRC = {
@@ -316,6 +335,8 @@ const SRC = {
   "Σ(745)": ["bbFront", "bbzfc", "bbnlab", "bbAaron"], "Σ(1919)": ["bbFront", "bignum"],
   "Rayo’s number": ["rayo", "rayoOUP"], "BIG FOOT": [], "Little Bigeddon": [], "Sasquatch": [],
   "Hollom’s number": ["hollom"],
+  "Kharab": ["indian"], "Neel": ["indian"], "Padma": ["indian"], "Shankh": ["indian"],
+  "Jō (穣)": ["japanese"], "Sai (載)": ["japanese"], "Nayuta (那由他)": ["japanese", "wiki"], "Fukashigi (不可思議)": ["japanese", "wiki"], "Muryōtaisū (無量大数)": ["japanese", "wiki"],
 };
 
 const DEF = {
@@ -328,8 +349,8 @@ const DEF = {
   "Million": ["1,000,000 = 1,000 × 1,000 = 10^{6}.", "In the short-scale naming rule, million is n = 1: 10^{3n+3} = 10^{6}."],
   "Crore": ["1 crore = 100 lakh = 10,000,000 = 10^{7}.", "Written 1,00,00,000 in Indian digit grouping."],
   "Hundred million": ["100,000,000 = 10^{8} = 10 crore."],
-  "Billion": ["Short scale: n-illion = 10^{3n+3}. Billion is n = 2, so 10^{3·2+3} = 10^{9}.", "Long scale (continental Europe, older British usage): billion = 10^{12}, and 10^{9} is a milliard."],
-  "Trillion": ["Short scale: n = 3, so 10^{3·3+3} = 10^{12} = 1,000 billions.", "Long scale: trillion = 10^{18}."],
+  "Billion": ["Short scale: n-illion = 10^{3n+3}. Billion is n = 2, so 10^{3·2+3} = 10^{9}.", "§egg:Long scale (continental Europe, older British usage): billion = 10^{12}, and 10^{9} is a milliard."],
+  "Trillion": ["Short scale: n = 3, so 10^{3·3+3} = 10^{12} = 1,000 billions.", "§egg:Long scale: trillion = 10^{18}."],
   "Quadrillion": ["Short scale: n = 4, so 10^{3·4+3} = 10^{15}."],
   "Quintillion": ["Short scale: n = 5, so 10^{18}."],
   "Sextillion": ["Short scale: n = 6, so 10^{21}.", "The prefix is the Latin numeral for n: bi-, tri-, quadri-, quin-, sex-, sept-, oct-, non-, dec-…"],
@@ -397,6 +418,15 @@ const DEF = {
   "BIG FOOT": ["The wiki lists FOOT(10^{100}) under this name and flags it as ill-defined.", "I could not find it defined anywhere outside the wiki."],
   "Little Bigeddon": ["The wiki lists em(12↑↑12) and flags it as ill-defined.", "I could not find it defined anywhere outside the wiki."],
   "Sasquatch": ["The wiki lists em₂(12↑↑12), a one-level extension of Little Bigeddon, and flags it as ill-defined.", "I could not find it defined anywhere outside the wiki."],
+  "Kharab": ["Traditional Indian names double the zeros each time: lakh 10^{5}, crore 10^{7}, arab 10^{9}, kharab 10^{11}.", "1 kharab = 100 arab = 10^{11}."],
+  "Neel": ["1 neel = 100 kharab = 10^{13}.", "Also spelled nil."],
+  "Padma": ["1 padma = 100 neel = 10^{15}, the same size as a short-scale quadrillion."],
+  "Shankh": ["1 shankh = 100 padma = 10^{17}.", "The list continues: mahashankh is 10^{19}."],
+  "Jō (穣)": ["Japanese counts in myriads: after 10,000 (man) every new unit is ×10,000.", "man 10^{4}, oku 10^{8}, chō 10^{12}, kei 10^{16}, gai 10^{20}, jo 10^{24}, jō 10^{28}."],
+  "Sai (載)": ["The next names in the list: kō 10^{32}, kan 10^{36}, sei 10^{40}, sai 10^{44}, goku 10^{48}."],
+  "Nayuta (那由他)": ["The traditional list continues past goku with Buddhist-influenced names.", "Wikipedia confirms the values up to goku (10^{48}); the wiki gives nayuta as 10^{60}."],
+  "Fukashigi (不可思議)": ["The name means “inconceivable”.", "The wiki gives it as 10^{64}; I could not confirm that outside the wiki."],
+  "Muryōtaisū (無量大数)": ["The name means “immeasurably large number” and is the last in the traditional list.", "The wiki gives it as 10^{68}; I could not confirm that outside the wiki."],
   "Hollom’s number": ["Lawrence Hollom invented the iota function, a pseudo-function meant to grow as fast as possible.", "The wiki gives the number as about I(6.895 × 10^{104})(200) and flags it as very ill-defined."],
 };
 
@@ -419,6 +449,8 @@ const MAG = {
   "Quadrillion": { lg: 15 }, "Quintillion": { lg: 18 }, "Sextillion": { lg: 21 }, "Avogadro’s number": { lg: 23.78 },
   "Septillion": { lg: 24 }, "Octillion": { lg: 27 }, "Nonillion": { lg: 30 }, "Decillion": { lg: 33 },
   "Undecillion … Novemdecillion": { lg: 48 }, "Vigintillion": { lg: 63 }, "Eddington’s number": { lg: 79.2 }, "Googol": { lg: 100 },
+  "Kharab": { lg: 11 }, "Neel": { lg: 13 }, "Padma": { lg: 15 }, "Shankh": { lg: 17 }, "Jō (穣)": { lg: 28 }, "Sai (載)": { lg: 44 },
+  "Nayuta (那由他)": { lg: 60 }, "Fukashigi (不可思議)": { lg: 64 }, "Muryōtaisū (無量大数)": { lg: 68 },
   "Planck volumes in the universe": { lg: 185.66 }, "Centillion": { lg: 303 }, "Short Infinity": { lg: 308.25 }, "Faxul": { lg: 374.9 },
   "Googolchime": { lg: 1000 }, "Millillion": { lg: 3003 },
   "Largest known prime": { lg: 41024319.9 }, "Trialogue": { lg: 1e10 }, "Ballium’s number": { lg: 138732019349.3 }, "3↑↑4": { lg: 3638334640024.1 },
@@ -450,34 +482,183 @@ const LAST_SCALED = Math.max(...ENTRIES.filter(e => MAG[e.n]).map(e => scaledPos
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  § 2d  THE SMALL JOURNEY  (numbers between 0 and 1)
+//
+//  Same cards, same line, seen from the other side.  A number's place
+//  on the line comes from its reciprocal: 1/1,000 sits where 1,000
+//  does in the big journey, so the further right, the closer to zero.
+//  Values come from the wiki list’s smallest class (“Class 0.5”); the
+//  prefixes and physical examples from the sources on each card.
+// ═══════════════════════════════════════════════════════════════
+const CH_SMALL = [
+  { name: "Fractions",          short: "Fractions", blurb: "Parts of one. Cut something into equal pieces and take some of them." },
+  { name: "Tenths and smaller", short: "Decimals",  blurb: "Each step is ÷10: one more zero after the point. Every ÷1,000 has its own science prefix." },
+  { name: "Past every prefix",  short: "Past",      blurb: "Smaller than any prefix in the metric system, down to the smallest length physics talks about and beyond." },
+  { name: "One over the giants",short: "Giants",    blurb: "The reciprocal of every huge number in the other journey: one divided by a tower, by Graham’s sequence, and then an infinitesimal." },
+];
+const SMALL = [
+  // 0 · Fractions
+  E(0, "One whole", "1", "", "The top of this journey. Everything after it is smaller: a part of one, between 0 and 1.", { s: "One whole pie, one whole metre, one whole day." }),
+  E(0, "Three quarters", "3/4", "", "Three of four equal pieces.", { a: "= 0.75", s: "Three quarters of an hour is 45 minutes." }),
+  E(0, "Half", "1/2", "", "Cut something into two equal pieces and take one.", { a: "= 0.5", s: "A fair coin lands heads half the time. Half an hour is 30 minutes." }),
+  E(0, "Third", "1/3", "", "One of three equal pieces. As a decimal it never ends.", { a: "= 0.333…", s: "A third of a circle is 120 degrees." }),
+  E(0, "Quarter", "1/4", "", "One of four equal pieces.", { a: "= 0.25", s: "A quarter of a year is three months." }),
+  E(0, "Fifth", "1/5", "", "One of five equal pieces.", { a: "= 0.2", s: "One finger is a fifth of the fingers on one hand." }),
+  E(0, "Tenth", "1/10", "", "One of ten equal pieces. Each place to the right of the decimal point is another ÷10.", { a: "= 0.1 = 10^{−1}", s: "A tenth of a metre is 10 centimetres, about a palm’s width." }),
+  E(0, "Hundredth", "1/100", "", "One of a hundred equal pieces.", { a: "= 0.01 = 10^{−2}", s: "One percent is a hundredth. A centimetre is a hundredth of a metre." }),
+  E(0, "Thousandth", "10^{−3}", "", "One of a thousand equal pieces.", { a: "= 0.001", s: "A millimetre is a thousandth of a metre: about the thickness of a credit card." }),
+  // 1 · Tenths and smaller
+  E(1, "Ten-thousandth", "10^{−4}", "", "Four places after the decimal point.", { a: "= 0.0001", s: "A sheet of paper is about a ten-thousandth of a metre thick (0.1 millimetres)." }),
+  E(1, "Millionth", "10^{−6}", "", "The metric prefix is micro-: a micrometre is a millionth of a metre. The wiki calls it Plasmarillion.", { a: "= 0.000001", s: "A human hair is roughly 80 micrometres across; a bacterium is a micrometre or two." }),
+  E(1, "Billionth", "10^{−9}", "", "The prefix is nano-: a nanometre is a billionth of a metre. The wiki calls it Fractillion.", { s: "A DNA double helix is about 2 nanometres wide, and a fingernail grows about a nanometre every second." }),
+  E(1, "Trillionth", "10^{−12}", "", "The prefix is pico-.", { s: "In a picosecond, light travels about 0.3 millimetres." }),
+  E(1, "Quadrillionth", "10^{−15}", "", "The prefix is femto-.", { s: "A proton is about a femtometre across (its radius is roughly 0.84 femtometres)." }),
+  E(1, "Quintillionth", "10^{−18}", "", "The prefix is atto-.", { s: "The shortest flashes of light last hundreds of attoseconds. Making them won the 2023 Nobel Prize in Physics." }),
+  E(1, "Sextillionth", "10^{−21}", "", "The prefix is zepto-.", { s: "In 2020 physicists timed light crossing a hydrogen molecule: about 247 zeptoseconds." }),
+  E(1, "Septillionth", "10^{−24}", "", "The prefix is yocto-.", { s: "A proton weighs about 1.7 yoctograms." }),
+  E(1, "Octillionth", "10^{−27}", "", "The prefix is ronto-, one of the four newest SI prefixes (2022).", { s: "An electron weighs about 0.9 rontograms." }),
+  E(1, "Nonillionth", "10^{−30}", "", "The prefix is quecto-, the smallest in the metric system.", { s: "A quectogram is roughly a thousandth of an electron’s mass." }),
+  E(1, "Decillionth", "10^{−33}", "", "No metric prefix goes this small: quecto- is the last one.", {}),
+  // 2 · Past every prefix
+  E(2, "Planck length (in metres)", "1.6 × 10^{−35}", "", "The Planck length, built from just three constants of nature. It is commonly taken as the scale where gravity and quantum physics have to be combined.", { s: "A proton is about 10²⁰ Planck lengths across." }),
+  E(2, "Vigintillionth", "10^{−63}", "", "One over a vigintillion.", { s: "The Planck length is roughly 18 vigintillionths of the width of the observable universe." }),
+  E(2, "Ogol-minutia", "10^{−80}", "", "The wiki’s name for 1/10⁸⁰. “-minutia” turns a big number into its reciprocal.", { s: "The chance of picking one particular atom at random out of the whole observable universe." }),
+  E(2, "Googol-minutia", "10^{−100}", "", "One over a googol.", { s: "The chance of guessing a particular 100-digit number on the first try." }),
+  E(2, "Eceton-minutia", "10^{−303}", "", "One over a centillion.", {}),
+  // 3 · One over the giants
+  E(3, "Googolminex", "10^{−10^{100}}", "", "One over a googolplex.", { s: "As a decimal it would need a googol zeros after the point, more than there are atoms in the universe." }),
+  E(3, "Decker-minutia", "1/(10↑↑10)", "", "One over a tower of ten tens."),
+  E(3, "Giggol-minutia", "1/(10↑↑100)", "", "One over a tower of a hundred tens."),
+  E(3, "Voidend", "1/(10↑↑↑10)", "", "One over 10↑↑↑10. The wiki also writes it 1/Fancy K."),
+  E(3, "Gaggol-minutia", "1/(10↑↑↑100)", "", "One over 10↑↑↑100."),
+  E(3, "Boogol-minutia", "1/(10↑^{100}10)", "", "One over a number built with a hundred arrows."),
+  E(3, "Gadevim", "1/g₃", "", "One over the third number in Graham’s sequence."),
+  E(3, "Microrcal", "1/g₁₀₀₀₀₀₀", "", "One over the millionth number in Graham’s sequence."),
+  E(3, "Okojo-ermine", "1/f_{ω^ω}(53)", "", "The wiki’s reciprocal of a value of the fast-growing hierarchy."),
+  E(3, "Infinitesimal", "ε", "", "Greater than zero, yet smaller than every positive number you can write. The end of the line.", { a: "= 1/ω in the surreal numbers", x: "an idea, not a size" }),
+];
+Object.assign(SRC, {
+  "Millionth": ["bipm", "nano"], "Billionth": ["bipm", "nano", "nanoHow"], "Trillionth": ["bipm"], "Quadrillionth": ["bipm", "proton"],
+  "Quintillionth": ["bipm", "nobel"], "Sextillionth": ["bipm", "zepto"], "Septillionth": ["bipm", "codata"], "Octillionth": ["bipm", "codata"],
+  "Nonillionth": ["bipm", "codata"], "Decillionth": ["bipm"], "Planck length (in metres)": ["planck", "proton"],
+  "Vigintillionth": ["planck", "atoms"], "Ogol-minutia": ["atoms"], "Googol-minutia": ["googol"], "Eceton-minutia": ["names"],
+  "Googolminex": ["googol"], "Decker-minutia": ["up"], "Giggol-minutia": ["up"], "Voidend": ["up"], "Gaggol-minutia": ["up"],
+  "Boogol-minutia": ["up", "bowers"], "Gadevim": ["graham"], "Microrcal": ["graham"], "Okojo-ermine": ["fgh"], "Infinitesimal": ["surreal", "surrealA"],
+  "Ten-thousandth": ["nano"],
+});
+Object.assign(DEF, {
+  "One whole": ["1 is the whole thing: a pie, a metre, a day.", "A number between 0 and 1 is a part of that whole."],
+  "Three quarters": ["3/4 means 3 of 4 equal parts.", "As a decimal: 3 ÷ 4 = 0.75."],
+  "Half": ["1/2 = 1 ÷ 2 = 0.5.", "Two halves make a whole."],
+  "Third": ["1/3 = 1 ÷ 3 = 0.333…: a repeating decimal whose 3s never stop.", "Three thirds make a whole."],
+  "Quarter": ["1/4 = 1 ÷ 4 = 0.25."],
+  "Fifth": ["1/5 = 1 ÷ 5 = 0.2."],
+  "Tenth": ["1/10 = 0.1 = 10^{−1}.", "Each place to the right of the decimal point is ÷10: tenths, hundredths, thousandths…"],
+  "Hundredth": ["1/100 = 0.01 = 10^{−2}.", "“Percent” means per hundred."],
+  "Thousandth": ["1/1,000 = 0.001 = 10^{−3}.", "The metric prefix milli- means a thousandth."],
+  "Ten-thousandth": ["10^{−4} = 0.0001: three zeros after the point, then a 1."],
+  "Millionth": ["10^{−6} = 1 ÷ 1,000,000.", "The metric prefix micro- (µ) means 10^{−6}."],
+  "Billionth": ["10^{−9} = 1 ÷ 1,000,000,000 (short scale).", "The prefix nano- (n) means 10^{−9}."],
+  "Trillionth": ["10^{−12}: the prefix pico- (p)."],
+  "Quadrillionth": ["10^{−15}: the prefix femto- (f)."],
+  "Quintillionth": ["10^{−18}: the prefix atto- (a)."],
+  "Sextillionth": ["10^{−21}: the prefix zepto- (z)."],
+  "Septillionth": ["10^{−24}: the prefix yocto- (y)."],
+  "Octillionth": ["10^{−27}: the prefix ronto- (r), adopted in 2022 with ronna-, quetta- and quecto-."],
+  "Nonillionth": ["10^{−30}: the prefix quecto- (q), adopted in 2022."],
+  "Decillionth": ["10^{−33}: no metric prefix covers it. Quecto- is the smallest."],
+  "Planck length (in metres)": ["The Planck length is √(ħG/c³) ≈ 1.616 × 10^{−35} m.", "It is made from only three constants: the reduced Planck constant ħ, Newton’s gravitational constant G and the speed of light c.", "It is commonly taken as the scale where gravity and quantum physics must be combined."],
+  "Vigintillionth": ["10^{−63} = 1 ÷ 10^{63}: one over a vigintillion (n = 20, so 10^{3n+3})."],
+  "Ogol-minutia": ["1/10^{80}.", "The wiki’s “-minutia” names turn a big number into its reciprocal. 10^{80} is about the number of atoms in the observable universe."],
+  "Googol-minutia": ["1/googol = 10^{−100}.", "As a decimal: a point, 99 zeros, then a 1."],
+  "Eceton-minutia": ["1/10^{303}: one over a centillion."],
+  "Googolminex": ["1/googolplex = 10^{−10^{100}}.", "As a decimal: a point, then a googol minus one zeros, then a 1."],
+  "Decker-minutia": ["1 ÷ (10↑↑10): one over a tower of ten tens."],
+  "Giggol-minutia": ["1 ÷ (10↑↑100): one over a tower of a hundred tens."],
+  "Voidend": ["1 ÷ (10↑↑↑10), which the wiki also writes 1/Fancy K."],
+  "Gaggol-minutia": ["1 ÷ (10↑↑↑100)."],
+  "Boogol-minutia": ["1 ÷ (10↑^{100}10): one over a number with a hundred arrows."],
+  "Gadevim": ["1 ÷ g₃, one over the third number in Graham’s sequence (g₁ = 3↑↑↑↑3, g₂ = 3↑^{g₁}3, g₃ = 3↑^{g₂}3)."],
+  "Microrcal": ["1 ÷ g₁₀₀₀₀₀₀: one over the millionth number in Graham’s sequence."],
+  "Okojo-ermine": ["The wiki gives this as about 1 ÷ f_{ω^ω}(53), a value of the fast-growing hierarchy.", "I could not find it defined outside the wiki."],
+  "Infinitesimal": ["An infinitesimal is greater than 0 but smaller than every positive real number.", "In Conway’s surreal numbers, ε = 1/ω is smaller than 1/2, 1/3, 1/4, … for every whole number.", "The real numbers contain none; the surreals do."],
+});
+const MAG_SMALL = {
+  "One whole": { lg: 0 }, "Three quarters": { lg: 0.125 }, "Half": { lg: 0.301 }, "Third": { lg: 0.477 }, "Quarter": { lg: 0.602 }, "Fifth": { lg: 0.699 },
+  "Tenth": { lg: 1 }, "Hundredth": { lg: 2 }, "Thousandth": { lg: 3 }, "Ten-thousandth": { lg: 4 }, "Millionth": { lg: 6 }, "Billionth": { lg: 9 },
+  "Trillionth": { lg: 12 }, "Quadrillionth": { lg: 15 }, "Quintillionth": { lg: 18 }, "Sextillionth": { lg: 21 }, "Septillionth": { lg: 24 },
+  "Octillionth": { lg: 27 }, "Nonillionth": { lg: 30 }, "Decillionth": { lg: 33 }, "Planck length (in metres)": { lg: 34.79 }, "Vigintillionth": { lg: 63 },
+  "Ogol-minutia": { lg: 80 }, "Googol-minutia": { lg: 100 }, "Eceton-minutia": { lg: 303 }, "Googolminex": { t: [2, 100] },
+  "Decker-minutia": { t: [9, 10] }, "Giggol-minutia": { t: [99, 10] },
+};
+{
+  const last = Math.max(...SMALL.filter(e => MAG_SMALL[e.n]).map(e => scaledPos(MAG_SMALL[e.n])));
+  let k = 0;
+  SMALL.forEach(e => {
+    e.mag = MAG_SMALL[e.n]; e.id = slug(e.n);
+    if (e.mag) e.pos = scaledPos(e.mag); else { e.ord = true; e.pos = last + 40 + k * 35; k++; }
+  });
+}
+ENTRIES.forEach(e => { e.mag = MAG[e.n]; });
+
+// ── a list of cards for the current settings ────────────────────
+const roundSig = (n, d) => +n.toPrecision(d);
+function ratioText(d, sym) {
+  const r = Math.pow(10, d);
+  if (d >= 0.9 && Math.abs(d - Math.round(d)) < 0.015) { const k = Math.round(d); return sym + (k <= 9 ? Math.pow(10, k).toLocaleString("en-US") : "10" + supNum(k)); }
+  if (r < 100) return sym + roundSig(r, 2);
+  if (d < 6) return "about " + sym + roundSig(r, 2).toLocaleString("en-US");
+  const e = Math.floor(d);
+  return `about ${sym}${roundSig(Math.pow(10, d - e), 2)} × 10${supNum(e)}`;
+}
+function buildList(entries, chapters, egg, small) {
+  const kept = entries.filter(e => egg || !e.egg).map((e, i) => ({ ...e, i }));
+  kept.forEach((e, i) => {
+    const p = kept[i - 1];
+    e.jump = p && p.mag && e.mag && p.mag.lg !== undefined && e.mag.lg !== undefined && e.mag.lg <= 400 ? ratioText(e.mag.lg - p.mag.lg, small ? "÷" : "×") : e.j;
+  });
+  const chStart = chapters.map((_, c) => kept.findIndex(e => e.c === c));
+  const chEnd = chapters.map((_, c) => kept.map(e => e.c).lastIndexOf(c));
+  const lastScaled = Math.max(...kept.filter(e => !e.ord).map(e => e.pos));
+  return { entries: kept, ch: chapters, chStart, chEnd, N: kept.length, lastScaled, small };
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  § 4  THE LINE
 //  One row.  The view glides to each card: it zooms so the previous
 //  and next numbers stay in sight, and the vertical line marks the
 //  current one.  In "even" mode every number gets an equal step and
 //  the whole list is shown, with the line moving instead.
+//  L is the current list of cards: the big journey or the small one.
 // ═══════════════════════════════════════════════════════════════
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const posOf = (e, even) => (even ? e.i : e.pos);
 const SUPD = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const supNum = n => String(n).split("").map(d => SUPD[d]).join("");
 
-function viewFor(i, even) {
-  if (even) return { c: (N - 1) / 2, w: N / 2 + 1 };
-  const e = ENTRIES[i];
-  const a = i > 0 ? e.pos - ENTRIES[i - 1].pos : 0, b = i < N - 1 ? ENTRIES[i + 1].pos - e.pos : 0;
+function viewFor(i, even, L) {
+  if (even) return { c: (L.N - 1) / 2, w: L.N / 2 + 1 };
+  const e = L.entries[i];
+  const a = i > 0 ? e.pos - L.entries[i - 1].pos : 0, b = i < L.N - 1 ? L.entries[i + 1].pos - e.pos : 0;
   return { c: e.pos, w: clamp(Math.max(a, b) * 2.4, 5, 700) };
 }
-function zoneCaption(c, even) {
+function zoneCaption(c, even, L) {
   if (even) return "evenly spaced: one step per number, not to scale";
+  if (L.small) {
+    if (c <= 100.5) return "to scale: each step is ÷10 (one more zero after the point)";
+    if (c <= P12) return "to scale: one over a tower; each level is one more “10 to the power of”";
+    if (c <= L.lastScaled + 1) return "to scale: one over a tower, squeezed (logarithmic)";
+    return "from here on, sizes cannot be compared: spaced by order only";
+  }
   if (c <= 100.5) return "to scale: each step along the line is ×10 (one more digit)";
   if (c <= P12) return "to scale: each tower level is one more “10 to the power of”";
-  if (c <= LAST_SCALED + 1) return "to scale: the height of the tower, squeezed (logarithmic)";
+  if (c <= L.lastScaled + 1) return "to scale: the height of the tower, squeezed (logarithmic)";
   return "from here on, sizes cannot be compared: spaced by order only";
 }
 
-function SlideLine({ idx, even, onGo }) {
+function SlideLine({ L, idx, even, onGo }) {
   const box = useRef(null), drag = useRef(null), curView = useRef(null), goal = useRef(null);
-  goal.current = viewFor(idx, even);
+  goal.current = viewFor(idx, even, L);
   if (!curView.current) curView.current = goal.current;
   const [view, setView] = useState(curView.current);
   const [width, setWidth] = useState(800);
@@ -515,7 +696,7 @@ function SlideLine({ idx, even, onGo }) {
   };
   const nearest = p => {
     let best = 0, bd = Infinity;
-    ENTRIES.forEach((e, i) => { const d = Math.abs(posOf(e, even) - p); if (d < bd) { bd = d; best = i; } });
+    L.entries.forEach((e, i) => { const d = Math.abs(posOf(e, even) - p); if (d < bd) { bd = d; best = i; } });
     return best;
   };
 
@@ -540,7 +721,7 @@ function SlideLine({ idx, even, onGo }) {
     const d = drag.current; drag.current = null;
     if (d && !d.moved) {                                                   // a click: pick the nearest tick
       const i = nearest(posAtClientX(ev.clientX));
-      if (Math.abs(X(posOf(ENTRIES[i], even)) - ((ev.clientX - box.current.getBoundingClientRect().left) / width) * 1000) < 22) onGo(i);
+      if (Math.abs(X(posOf(L.entries[i], even)) - ((ev.clientX - box.current.getBoundingClientRect().left) / width) * 1000) < 22) onGo(i);
     }
   };
 
@@ -549,8 +730,8 @@ function SlideLine({ idx, even, onGo }) {
   const taken = [];
   [0, -1, 1, -2, 2].forEach(off => {
     const i = idx + off;
-    if (i < 0 || i >= N) return;
-    const e = ENTRIES[i], px = (X(posOf(e, even)) / 1000) * width;
+    if (i < 0 || i >= L.N) return;
+    const e = L.entries[i], px = (X(posOf(e, even)) / 1000) * width;
     if (px < 30 || px > width - 30) return;
     const text = e.n.length > 22 ? e.n.slice(0, 21) + "…" : e.n, w = text.length * 6.3 + 12;
     if (taken.some(([a, b]) => px - w / 2 < b && px + w / 2 > a)) return;
@@ -561,123 +742,164 @@ function SlideLine({ idx, even, onGo }) {
   // axis: powers of ten in the first zone, tower levels in the second
   const axis = [];
   if (!even) {
-    const lo = view.c - view.w, hi = view.c + view.w;
+    const lo = view.c - view.w, hi = view.c + view.w, neg = L.small ? "⁻" : "";
     if (lo < 100) {
       const raw = 56 / pxPerUnit, step = [1, 2, 5, 10, 20, 50].find(s => s >= raw) || 50;
-      for (let k = Math.max(0, Math.ceil(lo / step) * step); k <= Math.min(100, hi); k += step) axis.push([k, k === 0 ? "1" : "10" + supNum(k)]);
+      for (let k = Math.max(0, Math.ceil(lo / step) * step); k <= Math.min(100, hi); k += step) axis.push([k, k === 0 ? "1" : "10" + neg + supNum(k)]);
     }
     if (hi > P_TOWER && lo < P12) {
-      for (let s = 3; s <= 12; s++) { const p = P_TOWER + (s - S_GOOGOL) * W_TOWER; if (p >= lo && p <= hi) axis.push([p, s === 3 ? "10¹⁰¹⁰" : `10↑↑${s}`]); }
+      for (let s = 3; s <= 12; s++) { const p = P_TOWER + (s - S_GOOGOL) * W_TOWER; if (p >= lo && p <= hi) axis.push([p, L.small ? `1/10↑↑${s}` : (s === 3 ? "10¹⁰¹⁰" : `10↑↑${s}`)]); }
     }
   }
+  const cur = L.entries[idx];
 
   return (
     <div ref={box} style={{ position: "relative", height: 104, touchAction: "none", cursor: even ? "pointer" : "grab", userSelect: "none" }}
          onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => setHover(null)}>
-      {even && CH.map((c, k) => {
-        const x = (X((CH_START[k] + CH_END[k]) / 2) / 1000) * width;
+      {even && L.ch.map((c, k) => {
+        const x = (X((L.chStart[k] + L.chEnd[k]) / 2) / 1000) * width;
         return <div key={k} style={{ position: "absolute", top: 0, left: x, transform: "translateX(-50%)", fontSize: 10, whiteSpace: "nowrap",
-                                     color: idx >= CH_START[k] && idx <= CH_END[k] ? T.outline : "#4b5d73", pointerEvents: "none" }}>{width < 560 ? k + 1 : c.short}</div>;
+                                     color: idx >= L.chStart[k] && idx <= L.chEnd[k] ? T.outline : "#4b5d73", pointerEvents: "none" }}>{width < 560 ? k + 1 : c.short}</div>;
       })}
       {labels.map(l => (
         <div key={l.i} style={{ position: "absolute", top: even ? 18 : 6, left: l.px, transform: "translateX(-50%)", fontSize: 11, whiteSpace: "nowrap",
                                 color: l.on ? T.outline : "#6b7e96", fontWeight: l.on ? 600 : 400, pointerEvents: "none" }}>{l.text}</div>
       ))}
       <svg viewBox="0 0 1000 40" preserveAspectRatio="none" style={{ position: "absolute", left: 0, top: 38, width: "100%", height: 40 }}>
-        {even && CH.map((c, k) => {
-          const x0 = X(CH_START[k] - 0.5), x1 = X(CH_END[k] + 0.5);
+        {even && L.ch.map((c, k) => {
+          const x0 = X(L.chStart[k] - 0.5), x1 = X(L.chEnd[k] + 0.5);
           return <rect key={k} x={x0} y={0} width={x1 - x0} height={40} fill={k % 2 ? "#0e1828" : "#101c30"} />;
         })}
         <line x1={0} x2={1000} y1={20} y2={20} stroke="#1e2d3d" vectorEffect="non-scaling-stroke" />
-        {ENTRIES.map((e, i) => {
+        {L.entries.map((e, i) => {
           const x = X(posOf(e, even));
           if (x < -10 || x > 1010) return null;
-          return <line key={i} x1={x} x2={x} y1={even ? 15 : (i === idx ? 10 : 14)} y2={even ? 25 : (i === idx ? 30 : 26)} stroke={i <= idx ? "#4b6a94" : "#2b3d55"} vectorEffect="non-scaling-stroke" />;
+          return <line key={e.id} x1={x} x2={x} y1={even ? 15 : (i === idx ? 10 : 14)} y2={even ? 25 : (i === idx ? 30 : 26)} stroke={i <= idx ? "#4b6a94" : "#2b3d55"} vectorEffect="non-scaling-stroke" />;
         })}
-        <line x1={X(posOf(ENTRIES[idx], even))} x2={X(posOf(ENTRIES[idx], even))} y1={2} y2={38} stroke={T.accent} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        <line x1={X(posOf(cur, even))} x2={X(posOf(cur, even))} y1={2} y2={38} stroke={T.accent} strokeWidth={2} vectorEffect="non-scaling-stroke" />
       </svg>
       {axis.map(([p, text], k) => (
         <div key={k} style={{ position: "absolute", top: 80, left: `${X(p) / 10}%`, transform: "translateX(-50%)", fontSize: 9.5, color: "#4b5d73", whiteSpace: "nowrap", pointerEvents: "none" }}>{text}</div>
       ))}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, textAlign: "center", fontSize: 10, color: "#4b5d73", pointerEvents: "none" }}>{zoneCaption(view.c, even)}</div>
-      {hover !== null && hover !== idx && !drag.current && (
-        <div style={{ position: "absolute", top: 24, left: `${X(posOf(ENTRIES[hover], even)) / 10}%`, transform: "translate(-50%,-100%)",
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, textAlign: "center", fontSize: 10, color: "#4b5d73", pointerEvents: "none" }}>{zoneCaption(view.c, even, L)}</div>
+      {hover !== null && hover !== idx && !drag.current && L.entries[hover] && (
+        <div style={{ position: "absolute", top: 24, left: `${X(posOf(L.entries[hover], even)) / 10}%`, transform: "translate(-50%,-100%)",
                       background: "#0e1828", border: "1px solid #1e2d3d", borderRadius: 6, padding: "2px 8px", fontSize: 10, color: "#cbd5e1",
-                      whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5 }}>{ENTRIES[hover].n}</div>
+                      whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5 }}>{L.entries[hover].n}</div>
       )}
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 5  APP
+//  § 5  SETTINGS  (bottom-right button: toggles and the wiki footer)
 // ═══════════════════════════════════════════════════════════════
-const fromHash = () => {
-  const i = ENTRIES.findIndex(e => e.id === location.hash.slice(1));
-  return i >= 0 ? i : 0;
-};
-const ONE_LINE = { display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+function Switch({ on, onClick, title, text }) {
+  return (
+    <button onClick={onClick} style={{ display: "flex", alignItems: "flex-start", gap: 10, width: "100%", background: "transparent", border: "none",
+                                       color: "#cbd5e1", cursor: "pointer", textAlign: "left", padding: "8px 0", fontSize: 12, fontFamily: "inherit" }}>
+      <span style={{ width: 30, height: 16, borderRadius: 8, position: "relative", flexShrink: 0, marginTop: 2, background: on ? T.cell : "#1e293b", transition: "background .2s" }}>
+        <span style={{ position: "absolute", top: 2, left: on ? 16 : 2, width: 12, height: 12, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+      </span>
+      <span>{title}<span style={{ display: "block", fontSize: 10, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>{text}</span></span>
+    </button>
+  );
+}
 
-function Options({ even, setEven, onClose }) {
+function Settings({ open, setOpen, even, setEven, egg, setEgg, small, setSmall }) {
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
-      <div style={{ position: "absolute", top: 40, right: 0, zIndex: 50, width: 280, background: "#0e1828", border: `1px solid ${T.a(62, 0.25)}`,
-                    borderRadius: 12, padding: 12, boxShadow: "0 12px 40px rgba(0,0,0,.6)" }}>
-        <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73", marginBottom: 8 }}>Options</div>
-        <button onClick={() => setEven(!even)} style={{ display: "flex", alignItems: "flex-start", gap: 10, width: "100%", background: "transparent", border: "none",
-                                                      color: "#cbd5e1", cursor: "pointer", textAlign: "left", padding: 0, fontSize: 12 }}>
-          <span style={{ width: 30, height: 16, borderRadius: 8, position: "relative", flexShrink: 0, marginTop: 2, background: even ? T.cell : "#1e293b", transition: "background .2s" }}>
-            <span style={{ position: "absolute", top: 2, left: even ? 16 : 2, width: 12, height: 12, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
-          </span>
-          <span>Space the numbers evenly
-            <span style={{ display: "block", fontSize: 10, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>
-              Off (default): the line is to scale, and slides to where each number really sits. On: every number gets an equal step.
-            </span>
-          </span>
-        </button>
-      </div>
+      {open && <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />}
+      {open && (
+        <div style={{ position: "fixed", right: 16, bottom: 72, zIndex: 50, width: "min(360px, calc(100vw - 32px))", maxHeight: "calc(100vh - 100px)", overflowY: "auto",
+                      background: "#0e1828", border: `1px solid ${T.a(62, 0.25)}`, borderRadius: 14, padding: "12px 14px", boxShadow: "0 12px 40px rgba(0,0,0,.6)" }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73", marginBottom: 2 }}>Settings</div>
+          <Switch on={even} onClick={() => setEven(!even)} title="Space the numbers evenly"
+                  text="Off (default): the line is to scale, and slides to where each number really sits. On: every number gets an equal step." />
+          <Switch on={egg} onClick={() => setEgg(!egg)} title="🥚 Hidden egg: numbers from around the world"
+                  text="Adds the lakh, crore and other names used in India and Japan, and the long-scale meanings of billion and trillion." />
+          <Switch on={small} onClick={() => setSmall(!small)} title="🔬 Look at small things"
+                  text="Switches the journey to the numbers between 0 and 1: fractions, tenths, the tiniest things physics measures, and beyond." />
+          <div style={{ borderTop: "1px solid #16233a", marginTop: 8, paddingTop: 10, fontSize: 10, color: "#64748b", lineHeight: 1.7 }}>
+            <span style={{ display: "block", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73", marginBottom: 4 }}>About these numbers</span>
+            Names, values and order follow the Googology Wiki’s “List of numbers”,
+            {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>googology.miraheze.org/wiki/List_of_numbers</a>,
+            a selection of the notable entries from a far longer list. The small numbers come from its smallest class, the numbers between 0 and 1.
+            Definitions, dates and comparisons are checked against the outside sources listed on each card; basic numbers show none.
+            Where I could only find a number on the wiki, the card says so. Names are conventions (“billion” and “trillion” differ between countries), and the wiki flags some entries as ill-defined.
+            Comparisons use rounded, commonly cited estimates.
+          </div>
+        </div>
+      )}
+      <button className="btn" onClick={() => setOpen(!open)} title="Settings" style={{
+        position: "fixed", right: 16, bottom: 16, zIndex: 60, width: 44, height: 44, borderRadius: "50%", fontSize: 19, padding: 0,
+        background: open ? T.cell : "#0e1828", color: open ? "#fff" : T.outline, border: `1px solid ${T.a(62, 0.35)}`, boxShadow: "0 4px 18px rgba(0,0,0,.5)" }}>⚙</button>
     </>
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  § 6  APP
+// ═══════════════════════════════════════════════════════════════
+const ONE_LINE = { display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const findById = id => {
+  const b = ENTRIES.find(e => e.id === id), s = SMALL.find(e => e.id === id);
+  return b ? { small: false, egg: !!b.egg } : s ? { small: true, egg: false } : null;
+};
+const initial = () => {
+  const id = location.hash.slice(1), hit = findById(id);
+  return { id: hit ? id : ENTRIES[0].id, small: hit ? hit.small : false, egg: hit ? hit.egg : false };
+};
+
 function App() {
-  const [idx, setIdx] = useState(fromHash);
+  const [init] = useState(initial);
+  const [id, setId] = useState(init.id);
+  const [small, setSmallState] = useState(init.small);
+  const [egg, setEgg] = useState(init.egg);
   const [playing, setPlaying] = useState(false);
-  const [menu, setMenu] = useState(false);
+  const [open, setOpen] = useState(false);
   const [even, setEvenState] = useState(() => { try { return localStorage.getItem("nl-even") === "1"; } catch (_) { return false; } });
   const setEven = v => { setEvenState(v); try { localStorage.setItem("nl-even", v ? "1" : "0"); } catch (_) { /* private mode */ } };
-  const e = ENTRIES[idx], next = ENTRIES[idx + 1], ch = CH[e.c];
-  const srcs = (SRC[e.n] || []).map(k => LINKS[k]);
-  const steps = DEF[e.n] || [];
 
-  const go = (i, keepPlaying) => {
-    setIdx(clamp(i, 0, N - 1));
-    if (!keepPlaying) setPlaying(false);
-  };
-  const prevChapter = () => go(idx > CH_START[e.c] ? CH_START[e.c] : Math.max(0, CH_START[Math.max(0, e.c - 1)]));
-  const nextChapter = () => go(e.c < CH.length - 1 ? CH_START[e.c + 1] : N - 1);
+  const L = useMemo(() => small ? buildList(SMALL, CH_SMALL, false, true) : buildList(ENTRIES, CH, egg, false), [small, egg]);
+  const found = L.entries.findIndex(x => x.id === id);
+  const idx = found >= 0 ? found : 0;
+  const e = L.entries[idx], next = L.entries[idx + 1], ch = L.ch[e.c];
+  const srcs = (SRC[e.n] || []).map(k => LINKS[k]);
+  const steps = (DEF[e.n] || []).filter(st => egg || !st.startsWith("§egg:")).map(st => st.replace(/^§egg:/, ""));
+  const basic = e.c === 0 && !e.egg;                                   // plain numbers need no sources
+
+  const go = i => { setId(L.entries[clamp(i, 0, L.N - 1)].id); };
+  const goStop = i => { setPlaying(false); go(i); };
+  const prevChapter = () => goStop(idx > L.chStart[e.c] ? L.chStart[e.c] : Math.max(0, L.chStart[Math.max(0, e.c - 1)]));
+  const nextChapter = () => goStop(e.c < L.ch.length - 1 ? L.chStart[e.c + 1] : L.N - 1);
+  const setSmall = v => { setSmallState(v); setPlaying(false); setId(v ? SMALL[0].id : ENTRIES[0].id); };
 
   useEffect(() => { try { history.replaceState(null, "", "#" + e.id); } catch (_) { /* file:// */ } }, [e.id]);
   useEffect(() => {
-    const onHash = () => setIdx(fromHash());
+    const onHash = () => { const h = findById(location.hash.slice(1)); if (!h) return; setSmallState(h.small); if (h.egg) setEgg(true); setId(location.hash.slice(1)); };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
   useEffect(() => {
     if (!playing) return;
-    const t = setInterval(() => setIdx(i => { if (i >= N - 1) { setPlaying(false); return i; } return i + 1; }), 2800);
+    const t = setInterval(() => setId(cur => {
+      const i = L.entries.findIndex(x => x.id === cur);
+      if (i >= L.N - 1) { setPlaying(false); return cur; }
+      return L.entries[i + 1].id;
+    }), 2800);
     return () => clearInterval(t);
-  }, [playing]);
+  }, [playing, L]);
   useEffect(() => {
     const onKey = ev => {
       const tag = ev.target.tagName;
-      if (ev.key === "ArrowRight") { ev.preventDefault(); ev.shiftKey ? nextChapter() : go(idx + 1); }
-      else if (ev.key === "ArrowLeft") { ev.preventDefault(); ev.shiftKey ? prevChapter() : go(idx - 1); }
-      else if (ev.key === " " && tag !== "BUTTON" && tag !== "A") { ev.preventDefault(); go(idx + 1); }
-      else if (ev.key === "Home") go(0);
-      else if (ev.key === "End") go(N - 1);
+      if (ev.key === "ArrowRight") { ev.preventDefault(); ev.shiftKey ? nextChapter() : goStop(idx + 1); }
+      else if (ev.key === "ArrowLeft") { ev.preventDefault(); ev.shiftKey ? prevChapter() : goStop(idx - 1); }
+      else if (ev.key === " " && tag !== "BUTTON" && tag !== "A") { ev.preventDefault(); goStop(idx + 1); }
+      else if (ev.key === "Home") goStop(0);
+      else if (ev.key === "End") goStop(L.N - 1);
       else if (ev.key === "p" || ev.key === "P") setPlaying(p => !p);
+      else if (ev.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -690,61 +912,62 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a1020", color: "#e2e8f0", fontFamily: FONT,
-                  display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 16px 32px" }}>
+                  display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 16px 84px" }}>
       <EdgeArrow page={PAGES[1]} side="left" />
 
-      <div style={{ width: W, display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap", position: "relative" }}>
+      <div style={{ width: W, display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: T.outline }}>The Number Line</div>
-          <div style={{ fontSize: 9, color: "#4b5d73", marginTop: 2, letterSpacing: "0.09em", textTransform: "uppercase" }}>a walk up the googology wiki’s list of numbers</div>
+          <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: T.outline }}>{small ? "The Number Line, Up Close" : "The Number Line"}</div>
+          <div style={{ fontSize: 9, color: "#4b5d73", marginTop: 2, letterSpacing: "0.09em", textTransform: "uppercase" }}>
+            {small ? "a walk from one down toward zero" : "a walk up the googology wiki’s list of numbers"}
+          </div>
         </div>
         <PageSwitch current={2} />
-        <button className="btn" onClick={() => setMenu(m => !m)} title="Options" style={{ fontSize: 15, padding: "3px 10px", position: "relative", zIndex: 60 }}>⚙</button>
-        {menu && <Options even={even} setEven={setEven} onClose={() => setMenu(false)} />}
       </div>
 
       {/* chapters */}
       <div className="chips" style={{ width: W, marginBottom: 6 }}>
-        {CH.map((c, k) => (
-          <button key={k} className="btn" onClick={() => go(CH_START[k])} style={{
+        {L.ch.map((c, k) => (
+          <button key={k} className="btn" onClick={() => goStop(L.chStart[k])} style={{
             whiteSpace: "nowrap", flexShrink: 0, background: k === e.c ? T.cell : "#0e1828", color: k === e.c ? "#fff" : "#94a3b8",
             borderColor: k === e.c ? T.outline : "#1e2d3d" }}>{k + 1} · {c.name}</button>
         ))}
       </div>
 
       {/* the line, then the controls: both keep a fixed size so nothing below them shifts the buttons */}
-      <div style={{ width: W }}><SlideLine idx={idx} even={even} onGo={i => go(i)} /></div>
+      <div style={{ width: W }}><SlideLine key={small ? "small" : "big"} L={L} idx={idx} even={even} onGo={goStop} /></div>
 
       <div style={{ width: W, display: "flex", gap: 6, height: 52, margin: "4px 0 12px" }}>
         <button className="btn" onClick={prevChapter} disabled={idx === 0} title="skip back a chapter" style={{ width: 46 }}>⟪ …</button>
-        <button className="btn" onClick={() => go(idx - 1)} disabled={idx === 0} title="previous number" style={{ width: 40, fontSize: 16 }}>‹</button>
+        <button className="btn" onClick={() => goStop(idx - 1)} disabled={idx === 0} title="previous number" style={{ width: 40, fontSize: 16 }}>‹</button>
         {next ? (
-          <a className="next" href={"#" + next.id} onClick={ev => { ev.preventDefault(); go(idx + 1); }}
+          <a className="next" href={"#" + next.id} onClick={ev => { ev.preventDefault(); goStop(idx + 1); }}
              style={{ flex: 1, minWidth: 0, height: 52, padding: "0 14px", background: T.a(40, 0.2), border: `1px solid ${T.a(62, 0.35)}`, color: "#e2e8f0" }}>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ ...ONE_LINE, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748b" }}>
                 next{next.c !== e.c ? ` · chapter ${next.c + 1}` : ""}
               </span>
               <span style={{ ...ONE_LINE, fontSize: 13, color: T.outline, marginTop: 2 }}>
-                {next.n}<span style={{ color: "#94a3b8" }}>{next.j ? ` · ${next.j}` : ""}</span>
+                {next.n}<span style={{ color: "#94a3b8" }}>{next.jump ? ` · ${next.jump}` : ""}</span>
               </span>
             </span>
             <span style={{ fontSize: 22, color: T.outline }}>→</span>
           </a>
         ) : (
-          <a className="next" href={"#" + ENTRIES[0].id} onClick={ev => { ev.preventDefault(); go(0); }}
+          <a className="next" href={"#" + L.entries[0].id} onClick={ev => { ev.preventDefault(); goStop(0); }}
              style={{ flex: 1, minWidth: 0, height: 52, padding: "0 14px", background: T.a(40, 0.2), border: `1px solid ${T.a(62, 0.35)}`, color: T.outline, justifyContent: "space-between" }}>
-            <span style={{ ...ONE_LINE, fontSize: 13 }}>End of the list. Start again from One</span><span style={{ fontSize: 20 }}>↺</span>
+            <span style={{ ...ONE_LINE, fontSize: 13 }}>End of the list. Start again from {L.entries[0].n}</span><span style={{ fontSize: 20 }}>↺</span>
           </a>
         )}
         <button className="btn" onClick={() => setPlaying(p => !p)} title="play the journey (P)" style={{ width: 40, color: playing ? "#fff" : "#94a3b8", background: playing ? T.cell : "#0e1828" }}>{playing ? "❚❚" : "▶"}</button>
-        <button className="btn" onClick={nextChapter} disabled={idx === N - 1} title="skip ahead a chapter" style={{ width: 46 }}>… ⟫</button>
+        <button className="btn" onClick={nextChapter} disabled={idx === L.N - 1} title="skip ahead a chapter" style={{ width: 46 }}>… ⟫</button>
       </div>
 
       {/* the card */}
       <div key={e.id} className="flip" style={{ width: W, background: "#0e1828", border: "1px solid #16233a", borderRadius: 16, padding: "18px 20px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 10, color: "#64748b", marginBottom: 6 }}>
-          <span style={{ color: T.outline }}>{ch.name}</span><span>·</span><span>{idx + 1} of {N}</span>
+          <span style={{ color: T.outline }}>{ch.name}</span><span>·</span><span>{idx + 1} of {L.N}</span>
+          {e.egg && <><span>·</span><span style={{ color: "#c08a4a" }}>🥚 hidden egg</span></>}
           {e.x && <><span>·</span><span style={{ color: "#c08a4a" }}>{e.x}</span></>}
           {e.ord && !even && <><span>·</span><span style={{ color: "#c08a4a" }}>placed by order only</span></>}
         </div>
@@ -752,6 +975,7 @@ function App() {
         <div style={{ fontFamily: DISP, fontSize: fs, color: e.v === e.n ? T.outline : "#f1f5f9", margin: "4px 0 2px", lineHeight: 1.15, overflowWrap: "anywhere" }}><Val s={e.v} /></div>
         {e.a && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 2 }}><Val s={e.a} /></div>}
         <div style={{ fontSize: 12.5, color: "#a5b4c8", lineHeight: 1.65, marginTop: 10, maxWidth: 680 }}><Val s={e.t} /></div>
+        {egg && e.eg && <div style={{ fontSize: 12, color: "#c9a56a", lineHeight: 1.6, marginTop: 8, maxWidth: 680 }}>🥚 <Val s={e.eg} /></div>}
 
         {steps.length > 0 && (
           <div style={{ marginTop: 14, maxWidth: 680 }}>
@@ -769,27 +993,24 @@ function App() {
         )}
         {e.l && <a href={e.l[0]} style={{ display: "inline-block", marginTop: 12, fontSize: 11, color: T.outline, textDecoration: "none", border: `1px solid ${T.a(62, 0.3)}`, borderRadius: 8, padding: "4px 10px" }}>▦ {e.l[1]} →</a>}
 
-        <div style={{ marginTop: 14, fontSize: 10.5, color: "#64748b", lineHeight: 1.8 }}>
-          <span style={{ ...label, color: "#4b5d73", marginBottom: 2 }}>sources</span>
-          {srcs.map(([text, url], k) => (
-            <span key={k}>{k > 0 && " · "}<a href={url} target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>{text}</a></span>
-          ))}
-          {srcs.length > 0 && " · "}
-          <a href={LINKS.wiki[1]} target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>{LINKS.wiki[0]}</a>
-          {srcs.length === 0 && ENTRIES[idx].c !== 0 && <span style={{ display: "block", color: "#7d6a4a" }}>Only the Googology Wiki lists this one; I found no independent source.</span>}
-        </div>
+        {!basic && (
+          <div style={{ marginTop: 14, fontSize: 10.5, color: "#64748b", lineHeight: 1.8 }}>
+            <span style={{ ...label, color: "#4b5d73", marginBottom: 2 }}>sources</span>
+            {srcs.map(([text, url], k) => (
+              <span key={k}>{k > 0 && " · "}<a href={url} target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>{text}</a></span>
+            ))}
+            {srcs.length > 0 && " · "}
+            <a href={LINKS.wiki[1]} target="_blank" rel="noopener" style={{ color: "#8aa0bd" }}>{LINKS.wiki[0]}</a>
+            {srcs.length === 0 && <span style={{ display: "block", color: "#7d6a4a" }}>Only the Googology Wiki lists this one; I found no independent source.</span>}
+          </div>
+        )}
       </div>
 
       <div style={{ width: W, marginTop: 8, fontSize: 10, color: "#4b5d73", lineHeight: 1.7 }}>
         {ch.blurb} Drag the line, press → or Space for the next number, Shift + → for the next chapter, P to play.
       </div>
-      <div style={{ width: W, marginTop: 12, fontSize: 10, color: "#4b5d73", lineHeight: 1.7, borderTop: "1px solid #16233a", paddingTop: 10 }}>
-        Names, values and order follow the Googology Wiki’s “List of numbers”,
-        {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>,
-        a selection of the notable entries from a far longer list. Definitions, dates and comparisons are checked against the outside sources listed on each card.
-        Where I could only find a number on the wiki, the card says so. Names are conventions (“billion” and “trillion” differ between countries), and the wiki flags some entries as ill-defined.
-        Comparisons use rounded, commonly cited estimates.
-      </div>
+
+      <Settings open={open} setOpen={setOpen} even={even} setEven={setEven} egg={egg} setEgg={setEgg} small={small} setSmall={setSmall} />
     </div>
   );
 }
