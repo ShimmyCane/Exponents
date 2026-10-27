@@ -122,15 +122,19 @@ const POINTS = [
   { name: "Googol",              r: { h: 1, v: 100 },     src: "wiki", note: "1 followed by 100 zeros. Coined in 1938 by Milton Sirotta, aged nine, and named by his uncle, the mathematician Edward Kasner." },
   { name: "Centillion (short)",  r: { h: 0, v: 1e303 },   src: "wiki", note: "10³⁰³ in the short scale. The googol (10¹⁰⁰) sits well below it, between decillion and centillion." },
   { name: "Planck volumes",      r: { h: 0, v: 4.6e185 }, src: "wiki", note: "About 4.6 × 10¹⁸⁵ Planck volumes fit in the observable universe. A Planck volume is the smallest volume with meaning in current physics." },
-  { name: "Googolplex",          r: { h: 2, v: 100 },     src: "std",  note: "10 raised to a googol. It has more digits than there are atoms in the observable universe, so you cannot write it out." },
-  { name: "Skewes' number",      r: { h: 3, v: 34 },      src: "std",  note: "Skewes (1933) gave an upper bound for the first number x where the prime count π(x) overtakes the logarithmic integral li(x). It was the largest number ever used in a serious proof for many decades." },
+  { name: "Googolplex",          r: { h: 2, v: 100 },     src: "wiki",  note: "10 raised to a googol. It has more digits than there are atoms in the observable universe, so you cannot write it out." },
+  { name: "First Skewes number", r: { h: 3, v: 34 },      src: "wiki",  note: "Skewes (1933) gave an upper bound for the first number x where the prime count π(x) overtakes the logarithmic integral li(x). It was the largest number ever used in a serious proof for many decades." },
+  { name: "Second Skewes number", r: { h: 3, v: 963 },  src: "wiki", note: "The wiki gives its value as 10^10^10^963. It is the bound used in the same prime-counting proof, and it is far larger than the first." },
   { name: "Googolplexian",       r: { h: 3, v: 100 },     src: "std",  note: "10 raised to a googolplex: the next rung of the same ladder." },
 ];
 // Numbers that grow faster than any tower on this line: they sit past its right end.
 const BEYOND = [
-  { name: "Graham's number", note: "An upper bound in a Ramsey-theory problem (Graham, 1971). It needs 64 layers of up-arrows, so no finite power tower can hold it.", src: "std" },
-  { name: "TREE(3)",         note: "From Kruskal's tree theorem: the longest possible sequence of labelled trees. It is far larger than Graham's number.", src: "std" },
-  { name: "Rayo's number",   note: "The smallest number bigger than any number nameable by a first-order set-theory sentence of a googol symbols.", src: "std" },
+  { name: "Graham's number", src: "wiki", note: "G₆₄, from Graham and Rothschild's Ramsey problem (1971). Each step uses one more layer of up-arrows, so no finite power tower can hold it." },
+  { name: "Moser's number",  src: "wiki", note: "2[2[5]] in Steinhaus–Moser notation, about 3 ↑ Mega 3. Mega is itself a polygon-notation number, so this sits far past any tower." },
+  { name: "xkcd number",     src: "wiki", note: "A(G, G), where G is Graham's number. Named after the xkcd comic that introduced it, and far past Graham's number." },
+  { name: "TREE(3)",         src: "wiki", note: "From Kruskal's tree theorem: the longest possible sequence of labelled trees. The wiki gives only lower bounds for it, and it is far larger than Graham's number." },
+  { name: "SSCG(3)",         src: "wiki", note: "From Friedman's subcubic graph problem (SSCG): the longest sequence of subcubic graphs that obeys a rule. It is far larger than TREE(3)." },
+  { name: "Rayo's number",   src: "wiki", note: "Rayo(10¹⁰⁰): the smallest number bigger than any number nameable by a first-order set-theory sentence of a googol symbols." },
 ];
 const SORTED = POINTS.map(p => ({ ...p, s: sOf(p.r) })).sort((a, b) => a.s - b.s);
 
@@ -344,7 +348,7 @@ function App() {
         {BEYOND.map(b => (
           <div key={b.name} style={{ background: "#0e1828", borderRadius: 12, padding: "10px 14px", border: `1px solid ${theme.a(62, 0.12)}` }}>
             <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73" }}>beyond the right edge</div>
-            <div style={{ fontFamily: DISP, fontSize: 16, color: theme.outline, marginTop: 2 }}>{b.name} †</div>
+            <div style={{ fontFamily: DISP, fontSize: 16, color: theme.outline, marginTop: 2 }}>{b.name}</div>
             <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.55, marginTop: 4 }}>{b.note}</div>
           </div>
         ))}
@@ -353,12 +357,12 @@ function App() {
       {/* Footnotes */}
       <div style={{ width: "min(960px,100%)", marginTop: 16, fontSize: 10, color: "#4b5d73", lineHeight: 1.7 }}>
         <div>
-          ¹ Names and approximate values marked without a dagger come from the Googology Wiki’s “List of numbers”,
+          ¹ Names and approximate values come from the Googology Wiki’s “List of numbers”,
           {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>.
           The list is ordered by size, and its names are conventions: “billion” and “trillion” mean different things in different countries.
         </div>
         <div>
-          † Standard reference points taken from the wider googology literature rather than from that list (Googolplex, Googolplexian, Skewes’ number, Graham’s number, TREE(3), Rayo’s number). These are shown for orientation only.
+          † Googolplexian is a standard reference that the wiki copy does not confirm, so it is shown for orientation only.
         </div>
       </div>
     </div>
