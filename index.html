@@ -762,15 +762,6 @@ function SettingsMenu({ theme, opts, setOpts, speed, setSpeed, onClose }) {
         background: "#0e1828", border: `1px solid ${theme.a("accent", 0.25)}`, borderRadius: 12,
         padding: 6, boxShadow: "0 12px 40px rgba(0,0,0,.6)",
       }}>
-        <div style={head}>Explore bigger</div>
-        <a className="menu-item" href="uparrow.html" style={{ color: theme.outline }}>
-          <span style={{ width: 28, textAlign: "center", fontSize: 15 }}>⇈</span>
-          <span>Knuth up-arrows<br /><span style={{ fontSize: 10, color: "#64748b" }}>towers like 3↑↑5</span></span>
-        </a>
-        <div className="menu-item off" style={{ color: "#94a3b8" }}>
-          <span style={{ width: 28, textAlign: "center", fontSize: 15 }}>⟶</span>
-          <span>Big-number line<br /><span style={{ fontSize: 10, color: "#64748b" }}>coming soon · see TODO.md</span></span>
-        </div>
         <div style={head}>Display</div>
         <Toggle theme={theme} on={opts.layers}  label="Colour by generation" onClick={() => setOpts(o => ({ ...o, layers: !o.layers }))} />
         <Toggle theme={theme} on={opts.history} label="Earlier-stage outlines" onClick={() => setOpts(o => ({ ...o, history: !o.history }))} />
@@ -800,6 +791,25 @@ const SERIES = [
   { href: "numberline.html", label: "Number line", tag: "you are here" },
 ];
 
+const PAGES = [
+  { href: "index.html", label: "Exponents" },
+  { href: "uparrow.html", label: "Up-arrows" },
+  { href: "numberline.html", label: "Number line" },
+];
+function PageSwitch({ current, color, line }) {
+  return (
+    <nav style={{ display: "inline-flex", border: `1px solid ${line}`, borderRadius: 8, overflow: "hidden", fontFamily: FONT, fontSize: 11, flexShrink: 0 }}>
+      {PAGES.map((p, i) => (
+        <a key={p.href} href={p.href} style={{
+          padding: "5px 10px", textDecoration: "none", whiteSpace: "nowrap",
+          background: i === current ? color : "transparent",
+          color: i === current ? "#0a1020" : "#94a3b8", fontWeight: i === current ? 600 : 400,
+        }}>{p.label}</a>
+      ))}
+    </nav>
+  );
+}
+
 function EdgeArrows({ current, color }) {
   const arrow = (p, side) => {
     if (!p) return null;
@@ -822,25 +832,6 @@ function EdgeArrows({ current, color }) {
   return <>{arrow(SERIES[current - 1], "left")}{arrow(SERIES[current + 1], "right")}</>;
 }
 
-function NextCard({ current, color, line }) {
-  const p = SERIES[current + 1];
-  if (!p) return null;
-  const st = {
-    width: "min(560px,100%)", marginTop: 16, padding: "14px 18px", borderRadius: 12, textDecoration: "none",
-    display: "flex", alignItems: "center", gap: 14, fontFamily: FONT,
-    border: `1px solid ${p.href ? line : "#1e2d3d"}`, background: "#0e1828", color: p.href ? color : "#4b5d73",
-  };
-  const body = (
-    <>
-      <span style={{ flex: 1 }}>
-        <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73" }}>next · part {current + 2}</span><br />
-        <span style={{ fontFamily: DISP, fontSize: 20 }}>{p.label}</span> <span style={{ fontSize: 12, opacity: 0.6 }}>{p.tag}</span>
-      </span>
-      <span style={{ fontSize: 26 }}>→</span>
-    </>
-  );
-  return p.href ? <a href={p.href} className="series" style={st}>{body}</a> : <div style={st}>{body}</div>;
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  § 7  APP
@@ -928,7 +919,7 @@ function App() {
       display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 16px 28px",
     }}>
       {/* Header */}
-      <div style={{ width: "min(880px,100%)", display: "flex", alignItems: "center", marginBottom: 10, position: "relative" }}>
+      <div style={{ width: "min(880px,100%)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10, position: "relative" }}>
         <div style={{ flex: 1 }}>
           <div style={{
             fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: theme.outline, transition: "color 0.4s",
@@ -938,7 +929,7 @@ function App() {
             b<sup>n</sup> as a field that keeps folding outward
           </div>
         </div>
-        <a href="uparrow.html" className="tool" title="Knuth up-arrow notation" style={{ ...toolStyle, textDecoration: "none", marginRight: 8 }}>⇈ up-arrows</a>
+        <div style={{ marginRight: 8 }}><PageSwitch current={0} color={theme.outline} line={theme.a("accent", 0.35)} /></div>
         <button className="tool" onClick={() => setMenu(m => !m)} title="Settings" style={{ ...toolStyle, fontSize: 15, padding: "0 9px", position: "relative", zIndex: 60 }}>⚙</button>
         {menu && <SettingsMenu theme={theme} opts={opts} setOpts={setOpts} speed={speed} setSpeed={setSpeed} onClose={() => setMenu(false)} />}
       </div>
@@ -1028,7 +1019,6 @@ function App() {
       <div style={{ fontSize: 9, color: "#334155", letterSpacing: "0.08em", marginTop: 12 }}>
         scroll / pinch to zoom · drag to pan · ← → to step · F to fit · R to replay
       </div>
-      <NextCard current={0} color={theme.outline} line={theme.a("accent", 0.35)} />
     </div>
   );
 }

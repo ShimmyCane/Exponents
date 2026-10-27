@@ -11,22 +11,17 @@
   <style>
     html, body { margin: 0; background: #0a1020; }
     * { box-sizing: border-box; }
-    .bt { cursor: pointer; border: none; transition: all .18s; }
-    .bt:hover:not(:disabled) { filter: brightness(1.25); }
-    .bt:disabled { opacity: .35; cursor: default; }
-    .nav-btn:hover:not(:disabled) { filter: brightness(1.3); transform: scale(1.08); }
-    .nav-btn:active:not(:disabled) { transform: scale(0.92); }
-    .series:hover { filter: brightness(1.3); }
-    .edge-arrow:hover { filter: brightness(1.35); }
-    @media (max-width: 1060px) { .edge-arrow { display: none !important; } }
-    .track { scrollbar-width: thin; scrollbar-color: #1e2d3d transparent; }
-    .track::-webkit-scrollbar { height: 6px; }
-    .track::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 3px; }
+    .track { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #1e2d3d transparent; }
     .tick { cursor: pointer; }
     .tick:hover text { fill: #e2e8f0; }
-    .pt-note { animation: rowIn .35s ease both; }
-    @keyframes rowIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-    sup.p { font-size: 0.68em; vertical-align: 0.55em; line-height: 0; }
+    .btn { cursor: pointer; border: none; font-family: 'DM Mono', monospace; font-size: 11px; color: #cbd5e1;
+           background: #1e293b; border-radius: 6px; padding: 4px 10px; }
+    .btn:hover:not(:disabled) { filter: brightness(1.25); }
+    .btn:disabled { opacity: .35; cursor: default; }
+    .flip { animation: flip .4s cubic-bezier(.2,.7,.2,1) both; }
+    @keyframes flip { from { opacity: 0; transform: perspective(600px) rotateX(-12deg) translateY(4px); } to { opacity: 1; transform: none; } }
+    .edge-arrow:hover { filter: brightness(1.35); }
+    @media (max-width: 1060px) { .edge-arrow { display: none !important; } }
   </style>
 </head>
 <body>
@@ -38,10 +33,9 @@ const { useState, useEffect, useRef, useMemo } = React;
 //  § 1  CONFIG
 // ═══════════════════════════════════════════════════════════════
 const CFG = {
-  PX: 320,              // pixels per unit of super-log (one level of "10 to the power of")
+  PX: 240,              // pixels per unit of super-log (one level of "10 to the power of")
   PAD: 90,              // space left of the start of the line
   SMAX: 9,              // right end of the line, in super-log units
-  TIER: 3,              // label rows, so neighbouring labels don't collide
 };
 const FONT = "'DM Mono', monospace";
 const DISP = "'DM Serif Display', serif";
@@ -177,193 +171,197 @@ function EdgeArrows({ current }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  § 5  THE LINE
+//  § 5  PAGE SWITCH  (same control on all three pages)
 // ═══════════════════════════════════════════════════════════════
-function Line({ cur, curS, selected, onPick }) {
-  const W = CFG.PAD * 2 + CFG.SMAX * CFG.PX, LINE = 150;
-  const curX = xOf(Math.min(curS, CFG.SMAX));
+const PAGES = [
+  { href: "index.html", label: "Exponents" },
+  { href: "uparrow.html", label: "Up-arrows" },
+  { href: "numberline.html", label: "Number line" },
+];
+function PageSwitch({ current, color, line }) {
+  return (
+    <nav style={{ display: "inline-flex", border: `1px solid ${line}`, borderRadius: 8, overflow: "hidden", fontFamily: FONT, fontSize: 11, flexShrink: 0 }}>
+      {PAGES.map((p, i) => (
+        <a key={p.href} href={p.href} style={{
+          padding: "5px 10px", textDecoration: "none", whiteSpace: "nowrap",
+          background: i === current ? color : "transparent",
+          color: i === current ? "#0a1020" : "#94a3b8", fontWeight: i === current ? 600 : 400,
+        }}>{p.label}</a>
+      ))}
+    </nav>
+  );
+}
 
-  // Greedy label stacking: each name takes the lowest row where it fits
-  // without touching the names already placed there.
+// ═══════════════════════════════════════════════════════════════
+//  § 6  THE LINE
+//  The line always runs past the current value, so it never ends.
+// ═══════════════════════════════════════════════════════════════
+const LINE = 112;                                   // y of the line itself
+const lineEnd = curS => Math.max(CFG.SMAX, Math.ceil(curS) + 4);
+const tickLabel = t => t === 0 ? "1" : t === 1 ? "10" : t === 2 ? "10¹⁰" : t === 3 ? "10¹⁰¹⁰" : `10↑↑${t}`;
+
+function Line({ curS, selected, onPick }) {
+  const end = lineEnd(curS), W = CFG.PAD * 2 + end * CFG.PX;
+  const step = Math.max(1, Math.ceil(end / 14));    // label every nth level on very long lines
   const rows = [];
-  const tiers = SORTED.map(p => {
-    const w = (p.name.length + (p.src === "std" ? 2 : 0)) * 6.6 + 6, x = xOf(p.s);
+  const tiers = SORTED.map(p => {                    // stack names so none overlap
+    const w = (p.name.length + (p.src === "std" ? 2 : 0)) * 6.2 + 6, x = xOf(p.s);
     let k = rows.findIndex(r => r.every(([a, b]) => x + w / 2 < a || x - w / 2 > b));
     if (k < 0) { rows.push([]); k = rows.length - 1; }
     rows[k].push([x - w / 2, x + w / 2]);
     return k;
   });
-  const rowY = k => LINE - 34 - k * 15;
-
+  const rowY = k => LINE - 22 - k * 13;
+  const ticks = Array.from({ length: Math.floor(end / step) + 1 }, (_, i) => i * step);
   return (
-    <svg width={W} height={236} style={{ display: "block" }}>
-      {/* the line itself and its super-log ticks */}
-      <line x1={xOf(0)} x2={xOf(CFG.SMAX)} y1={LINE} y2={LINE} stroke="#1e2d3d" strokeWidth={2} />
-      {Array.from({ length: CFG.SMAX + 1 }, (_, t) => (
+    <svg width={W} height={LINE + 36} style={{ display: "block" }}>
+      <line x1={xOf(0)} x2={xOf(end)} y1={LINE} y2={LINE} stroke="#1e2d3d" />
+      {ticks.map(t => (
         <g key={t}>
-          <line x1={xOf(t)} x2={xOf(t)} y1={LINE - 8} y2={LINE + 8} stroke="#33475e" strokeWidth={1.5} />
-          <text x={xOf(t)} y={LINE + 22} textAnchor="middle" fill="#4b5d73" fontSize={10} fontFamily={FONT}>
-            {t === 0 ? "1" : t === 1 ? "10" : t === 2 ? "10¹⁰" : t === 3 ? "10¹⁰¹⁰" : `10↑↑${t}`}
-          </text>
+          <line x1={xOf(t)} x2={xOf(t)} y1={LINE - 4} y2={LINE + 4} stroke="#33475e" />
+          <text x={xOf(t)} y={LINE + 16} textAnchor="middle" fill="#4b5d73" fontSize={9.5} fontFamily={FONT}>{tickLabel(t)}</text>
         </g>
       ))}
-
-      {/* points */}
       {SORTED.map((p, i) => {
         const x = xOf(p.s), y = rowY(tiers[i]), on = selected === p.name;
         return (
           <g key={p.name} className="tick" onClick={() => onPick(p.name)}>
-            <line x1={x} x2={x} y1={y + 3} y2={LINE} stroke={on ? theme.outline : "#26364a"} strokeWidth={on ? 1.5 : 1} />
-            <circle cx={x} cy={LINE} r={on ? 5 : 3.5} fill={on ? theme.outline : "#64748b"} />
-            <text x={x} y={y} textAnchor="middle" fill={on ? theme.outline : "#64748b"} fontSize={11} fontFamily={FONT}>
+            <line x1={x} x2={x} y1={y + 3} y2={LINE} stroke={on ? theme.outline : "#22324a"} />
+            <circle cx={x} cy={LINE} r={on ? 3 : 2} fill={on ? theme.outline : "#64748b"} />
+            <text x={x} y={y} textAnchor="middle" fill={on ? theme.outline : "#64748b"} fontSize={10.5} fontFamily={FONT}>
               {p.name}{p.src === "std" ? " †" : ""}
             </text>
           </g>
         );
       })}
-
-      {/* you are here */}
-      <g>
-        <line x1={curX} x2={curX} y1={LINE - 14} y2={LINE + 36} stroke={theme.accent} strokeWidth={2} />
-        <circle cx={curX} cy={LINE} r={7} fill={theme.accent} />
-        <text x={curX} y={LINE + 50} textAnchor="middle" fill={theme.outline} fontSize={11} fontFamily={FONT} fontWeight={600}>you are here</text>
-      </g>
-
-      {/* zones, along the bottom */}
-      {ZONES.map((z, i) => (
-        <g key={i}>
-          <rect x={xOf(z.from)} y={216} width={xOf(z.to) - xOf(z.from)} height={16} fill={i % 2 ? "#131e2e" : "#0e1828"} />
-          <text x={xOf(z.from) + 6} y={228} fill="#4b5d73" fontSize={9} fontFamily={FONT}>{z.label}</text>
-        </g>
-      ))}
+      {/* the current value: a single vertical line */}
+      <line x1={xOf(curS)} x2={xOf(curS)} y1={6} y2={LINE + 4} stroke={theme.accent} strokeWidth={1.5} />
     </svg>
   );
 }
 
+// Towers of up to three tens as nested superscripts; everything else as text.
+function ValueView({ r }) {
+  if (r.h === 0 || r.h > 3) return <span>{readable(r)}</span>;
+  let inner = <span>{Number.isInteger(r.v) ? fmt(r.v) : r.v.toPrecision(3)}</span>;
+  for (let i = 0; i < r.h; i++) inner = <span>10<sup style={{ fontSize: "0.55em" }}>{inner}</sup></span>;
+  return inner;
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  § 6  APP
+//  § 7  APP
+//  One sequence of steps: the named points, then the numbers beyond the
+//  line.  The card flips as the number moves through it.
 // ═══════════════════════════════════════════════════════════════
+const STEPS = [
+  ...SORTED.map(p => ({ kind: "point", name: p.name, p })),
+  ...BEYOND.map(b => ({ kind: "beyond", name: b.name, b })),
+];
+// index of the last named point at or below a super-log value
+function indexFor(s) {
+  let k = 0;
+  SORTED.forEach((p, i) => { if (p.s <= s + 1e-9) k = i; });
+  return k;
+}
+
 function App() {
-  const [cur, setCur]           = useState({ h: 0, v: 1 });
-  const [selected, setSelected] = useState("One");
+  const [cur, setCur] = useState({ h: 0, v: 1 });
+  const [pos, setPos] = useState(0);
   const scroller = useRef(null);
   const curS = sOf(cur);
-  const idx  = SORTED.findIndex(p => p.name === selected);
-  const pick = SORTED[idx] ?? null;
+  const step = STEPS[pos];
+  const zone = ZONES.find(z => curS >= z.from && curS < z.to) ?? ZONES[ZONES.length - 1];
+  const digits = digitsOf(cur);
+  const canDown = down(cur) !== null;
 
-  // Keep "you are here" in the middle of the view as the number grows.
+  // keep the current value centred as it grows
   useEffect(() => {
     const el = scroller.current;
-    if (!el) return;
-    el.scrollTo({ left: xOf(Math.min(curS, CFG.SMAX)) - el.clientWidth / 2, behavior: "smooth" });
+    if (el) el.scrollTo({ left: xOf(curS) - el.clientWidth / 2, behavior: "smooth" });
   }, [curS]);
 
-  function choose(name) {
-    const p = SORTED.find(x => x.name === name);
-    if (!p) return;
-    setSelected(name); setCur(p.r);
+  function go(i) {                       // move to a step in the sequence
+    const j = Math.max(0, Math.min(STEPS.length - 1, i));
+    setPos(j);
+    if (STEPS[j].kind === "point") setCur(STEPS[j].p.r);
   }
-  function step(dir) {
-    const next = SORTED[Math.max(0, Math.min(SORTED.length - 1, idx + dir))];
-    if (idx < 0) return choose(dir > 0 ? SORTED[0].name : SORTED[SORTED.length - 1].name);
-    choose(next.name);
+  function climb(next) {                 // change the number itself; the card follows
+    setCur(next);
+    setPos(indexFor(sOf(next)));
   }
-  const upDisabled   = cur.h >= 9;
-  const downDisabled = down(cur) === null;
-
   useEffect(() => {
     const onKey = e => {
       if (e.target.tagName === "INPUT") return;
-      if (e.key === "ArrowRight") step(1);
-      if (e.key === "ArrowLeft") step(-1);
+      if (e.key === "ArrowRight") go(pos + 1);
+      if (e.key === "ArrowLeft") go(pos - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-
-  const digits = digitsOf(cur);
-  const zone = ZONES.find(z => curS >= z.from && curS < z.to) ?? ZONES[ZONES.length - 1];
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a1020", color: "#e2e8f0", fontFamily: FONT,
                   display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 16px 32px" }}>
       <EdgeArrows current={2} />
 
-      {/* Header */}
-      <div style={{ width: "min(960px,100%)", display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: theme.outline, textShadow: `0 0 20px ${theme.a(62, 0.3)}` }}>
-            The Number Line
-          </div>
+      {/* header */}
+      <div style={{ width: "min(960px,100%)", display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.6vw,28px)", color: theme.outline }}>The Number Line</div>
           <div style={{ fontSize: 9, color: "#4b5d73", marginTop: 2, letterSpacing: "0.09em", textTransform: "uppercase" }}>
             every tick is one more “10 to the power of”
           </div>
         </div>
-        <a href="index.html" style={{ fontSize: 11, color: theme.outline, border: `1px solid ${theme.a(62, 0.3)}`, borderRadius: 8, padding: "6px 10px", textDecoration: "none" }}>← exponents</a>
+        <PageSwitch current={2} color={theme.outline} line={theme.a(62, 0.3)} />
       </div>
 
-      {/* Current number */}
-      <div style={{ width: "min(960px,100%)", background: "#0e1828", border: `1px solid ${theme.a(62, 0.2)}`, borderRadius: 14, padding: "14px 18px", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: "center" }}>
-          <button className="bt" onClick={() => setCur(down(cur))} disabled={downDisabled} title="take the log (one level down)"
-            style={{ width: 40, height: 40, borderRadius: "50%", background: theme.cell, color: "#fff", fontSize: 18 }}>↓</button>
-          <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.4vw,30px)", color: "#f1f5f9", textAlign: "center", minWidth: 240 }}>
-            {readable(cur)}
-          </div>
-          <button className="bt" onClick={() => setCur(up(cur))} disabled={upDisabled} title="10 to the power of this (one level up)"
-            style={{ width: 40, height: 40, borderRadius: "50%", background: theme.cell, color: "#fff", fontSize: 18 }}>↑</button>
+      {/* readout */}
+      <div style={{ width: "min(960px,100%)", display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "8px 0 4px" }}>
+        <button className="btn" onClick={() => climb(down(cur))} disabled={!canDown} title="take the log (one level down)"
+          style={{ width: 30, height: 30, borderRadius: "50%", fontSize: 14, padding: 0 }}>↓</button>
+        <div style={{ fontFamily: DISP, fontSize: "clamp(20px,3.4vw,30px)", color: "#f1f5f9", textAlign: "center", minWidth: 220 }}>
+          <ValueView r={cur} />
         </div>
-        <div style={{ textAlign: "center", fontSize: 11, color: "#64748b", marginTop: 8 }}>
-          {digits ? `${digits} digit${digits === "1" ? "" : "s"} · ` : "far more digits than atoms in the universe · "}
-          super-log {curS.toFixed(2)} · zone: {zone.label}
+        <button className="btn" onClick={() => climb(up(cur))} title="10 to the power of this (one level up)"
+          style={{ width: 30, height: 30, borderRadius: "50%", fontSize: 14, padding: 0 }}>↑</button>
+      </div>
+      <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10, textAlign: "center" }}>
+        {digits ? `${digits} digit${digits === "1" ? "" : "s"} · ` : "more digits than atoms in the universe · "}
+        super-log {curS.toFixed(2)} · {zone.label}
+      </div>
+
+      {/* line */}
+      <div style={{ width: "min(960px,100%)", background: "#0e1828", borderRadius: 12, padding: "8px 0 6px", border: "1px solid #16233a" }}>
+        <div ref={scroller} className="track">
+          <Line curS={curS} selected={step.kind === "point" ? step.name : null}
+                onPick={name => go(SORTED.findIndex(p => p.name === name))} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 12px 0", fontSize: 10, color: "#4b5d73" }}>
+          <button className="btn" onClick={() => go(pos - 1)} disabled={pos === 0}>← previous</button>
+          <button className="btn" onClick={() => go(pos + 1)} disabled={pos === STEPS.length - 1}>next →</button>
+          <span style={{ marginLeft: "auto" }}>scroll sideways · ← → keys</span>
         </div>
       </div>
 
-      {/* Line */}
-      <div style={{ width: "min(960px,100%)", background: "#0e1828", borderRadius: 14, border: `1px solid ${theme.a(62, 0.15)}`, padding: "10px 0 6px" }}>
-        <div ref={scroller} className="track" style={{ overflowX: "auto", position: "relative" }}>
-          <Line cur={cur} curS={curS} selected={selected} onPick={choose} />
+      {/* flipping card */}
+      <div key={pos} className="flip" style={{ width: "min(960px,100%)", marginTop: 12, background: "#0e1828", borderRadius: 12, padding: "12px 16px", border: "1px solid #16233a", minHeight: 78 }}>
+        <div style={{ fontFamily: DISP, fontSize: 18, color: theme.outline }}>
+          {step.name}{step.kind === "point" && step.p.src === "std" ? " †" : ""}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px 0", fontSize: 11, color: "#64748b" }}>
-          <button className="bt" onClick={() => step(-1)} disabled={idx === 0} style={{ padding: "4px 10px", borderRadius: 6, background: "#1e293b", color: "#cbd5e1" }}>← previous</button>
-          <button className="bt" onClick={() => step(1)} disabled={idx === SORTED.length - 1} style={{ padding: "4px 10px", borderRadius: 6, background: "#1e293b", color: "#cbd5e1" }}>next →</button>
-          <span style={{ marginLeft: "auto" }}>scroll sideways for the rest of the line</span>
+        <div style={{ fontSize: 12, color: "#a5b4c8", lineHeight: 1.6, marginTop: 4 }}>
+          {step.kind === "point" ? step.p.note : step.b.note}
         </div>
+        {step.kind === "beyond" && <div style={{ fontSize: 10, color: "#4b5d73", marginTop: 6 }}>beyond the right edge of the line</div>}
       </div>
 
-      {/* Explanation */}
-      <div key={selected} className="pt-note" style={{ width: "min(960px,100%)", marginTop: 12, background: "#0e1828", borderRadius: 12, padding: "12px 16px", border: `1px solid ${theme.a(62, 0.15)}`, minHeight: 74 }}>
-        {pick ? (
-          <>
-            <div style={{ fontFamily: DISP, fontSize: 18, color: theme.outline }}>{pick.name}{pick.src === "std" ? " †" : ""}</div>
-            <div style={{ fontSize: 12, color: "#a5b4c8", lineHeight: 1.6, marginTop: 4 }}>{pick.note}</div>
-          </>
-        ) : (
-          <div style={{ fontSize: 12, color: "#64748b" }}>Click a tick, or use previous and next, to read about it.</div>
-        )}
-      </div>
-
-      {/* Beyond the line */}
-      <div style={{ width: "min(960px,100%)", marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 10 }}>
-        {BEYOND.map(b => (
-          <div key={b.name} style={{ background: "#0e1828", borderRadius: 12, padding: "10px 14px", border: `1px solid ${theme.a(62, 0.12)}` }}>
-            <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73" }}>beyond the right edge</div>
-            <div style={{ fontFamily: DISP, fontSize: 16, color: theme.outline, marginTop: 2 }}>{b.name}</div>
-            <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.55, marginTop: 4 }}>{b.note}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Footnotes */}
-      <div style={{ width: "min(960px,100%)", marginTop: 16, fontSize: 10, color: "#4b5d73", lineHeight: 1.7 }}>
+      {/* footnotes */}
+      <div style={{ width: "min(960px,100%)", marginTop: 14, fontSize: 10, color: "#4b5d73", lineHeight: 1.7 }}>
         <div>
-          ¹ Names and approximate values come from the Googology Wiki’s “List of numbers”,
+          ¹ Names and values come from the Googology Wiki’s “List of numbers”,
           {" "}<a href="https://googology.miraheze.org/wiki/List_of_numbers" target="_blank" rel="noopener" style={{ color: "#64748b" }}>googology.miraheze.org/wiki/List_of_numbers</a>.
-          The list is ordered by size, and its names are conventions: “billion” and “trillion” mean different things in different countries.
+          Names are conventions: “billion” and “trillion” differ between countries.
         </div>
-        <div>
-          † Googolplexian is a standard reference that the wiki copy does not confirm, so it is shown for orientation only.
-        </div>
+        <div>† Googolplexian is a standard reference that the wiki copy does not confirm.</div>
       </div>
     </div>
   );

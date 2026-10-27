@@ -358,6 +358,25 @@ const SERIES = [
   { href: "numberline.html", label: "Number line", tag: "you are here" },
 ];
 
+const PAGES = [
+  { href: "index.html", label: "Exponents" },
+  { href: "uparrow.html", label: "Up-arrows" },
+  { href: "numberline.html", label: "Number line" },
+];
+function PageSwitch({ current, color, line }) {
+  return (
+    <nav style={{ display: "inline-flex", border: `1px solid ${line}`, borderRadius: 8, overflow: "hidden", fontFamily: FONT, fontSize: 11, flexShrink: 0 }}>
+      {PAGES.map((p, i) => (
+        <a key={p.href} href={p.href} style={{
+          padding: "5px 10px", textDecoration: "none", whiteSpace: "nowrap",
+          background: i === current ? color : "transparent",
+          color: i === current ? "#0a1020" : "#94a3b8", fontWeight: i === current ? 600 : 400,
+        }}>{p.label}</a>
+      ))}
+    </nav>
+  );
+}
+
 function EdgeArrows({ current, color }) {
   const arrow = (p, side) => {
     if (!p) return null;
@@ -380,25 +399,6 @@ function EdgeArrows({ current, color }) {
   return <>{arrow(SERIES[current - 1], "left")}{arrow(SERIES[current + 1], "right")}</>;
 }
 
-function NextCard({ current, color, line }) {
-  const p = SERIES[current + 1];
-  if (!p) return null;
-  const st = {
-    width: "min(560px,100%)", marginTop: 16, padding: "14px 18px", borderRadius: 12, textDecoration: "none",
-    display: "flex", alignItems: "center", gap: 14, fontFamily: FONT,
-    border: `1px solid ${p.href ? line : "#1e2d3d"}`, background: "#0e1828", color: p.href ? color : "#4b5d73",
-  };
-  const body = (
-    <>
-      <span style={{ flex: 1 }}>
-        <span style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#4b5d73" }}>next · part {current + 2}</span><br />
-        <span style={{ fontFamily: DISP, fontSize: 20 }}>{p.label}</span> <span style={{ fontSize: 12, opacity: 0.6 }}>{p.tag}</span>
-      </span>
-      <span style={{ fontSize: 26 }}>→</span>
-    </>
-  );
-  return p.href ? <a href={p.href} className="series" style={st}>{body}</a> : <div style={st}>{body}</div>;
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  § 7  APP
@@ -503,7 +503,7 @@ function App() {
             Knuth's up-arrow notation · when exponents aren't big enough
           </div>
         </div>
-        <a href={`index.html?base=${a}`} className="tool" style={{ color: theme.outline, border: `1px solid ${theme.a(75, 62, 0.3)}` }}>← exponents</a>
+        <PageSwitch current={1} color={theme.outline} line={theme.a(75, 62, 0.35)} />
       </div>
 
       <EdgeArrows current={1} color={theme.outline} />
@@ -615,7 +615,6 @@ function App() {
       </div>
 
       <div style={{ fontSize: 9, color: "#334155", letterSpacing: "0.08em", marginTop: 14 }}>← → or ± to change n</div>
-      <NextCard current={1} color={theme.outline} line={theme.a(75, 62, 0.35)} />
     </div>
   );
 }
